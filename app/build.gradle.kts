@@ -74,9 +74,6 @@ dependencies {
     implementation(libs.mlkit.text.recognition) {
         exclude(group = "com.google.android.datatransport")
     }
-    implementation(libs.mlkit.text.recognition.chinese) {
-        exclude(group = "com.google.android.datatransport")
-    }
 
     // PDF
     implementation(libs.pdfbox.android)
