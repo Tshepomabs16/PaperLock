@@ -23,49 +23,68 @@ val JakartaSans = FontFamily(
     Font(R.font.plus_jakarta_sans_extrabold, FontWeight.ExtraBold),
 )
 
-// Negative tracking on the big sizes only. Display type set at default tracking
-// reads loose and amateurish; body text set tight reads cramped.
+/**
+ * Two registers, deliberately far apart.
+ *
+ * Display type is huge, ExtraBold and tracked tight to -2sp; labels are small,
+ * uppercase and tracked wide to +1.5sp. The gap between them is what carries the
+ * hierarchy, so mid-weight filler sizes are kept to a minimum.
+ */
 val ToolboxTypography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = JakartaSans,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 56.sp,
+        lineHeight = 54.sp,
+        letterSpacing = (-2.4).sp,
+    ),
+    displayMedium = TextStyle(
+        fontFamily = JakartaSans,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 44.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-1.8).sp,
+    ),
     displaySmall = TextStyle(
         fontFamily = JakartaSans,
         fontWeight = FontWeight.ExtraBold,
         fontSize = 34.sp,
-        lineHeight = 40.sp,
-        letterSpacing = (-0.8).sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-1.2).sp,
     ),
     headlineMedium = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
-        fontSize = 26.sp,
-        lineHeight = 32.sp,
-        letterSpacing = (-0.5).sp,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 28.sp,
+        lineHeight = 30.sp,
+        letterSpacing = (-1).sp,
     ),
     headlineSmall = TextStyle(
         fontFamily = JakartaSans,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = (-0.3).sp,
+        lineHeight = 26.sp,
+        letterSpacing = (-0.6).sp,
     ),
     titleLarge = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 20.sp,
-        lineHeight = 26.sp,
-        letterSpacing = (-0.2).sp,
+        lineHeight = 24.sp,
+        letterSpacing = (-0.5).sp,
     ),
     titleMedium = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 17.sp,
-        lineHeight = 22.sp,
-        letterSpacing = 0.sp,
+        lineHeight = 21.sp,
+        letterSpacing = (-0.3).sp,
     ),
     titleSmall = TextStyle(
         fontFamily = JakartaSans,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
-        lineHeight = 20.sp,
+        lineHeight = 19.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily = JakartaSans,
@@ -81,29 +100,31 @@ val ToolboxTypography = Typography(
     ),
     bodySmall = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 13.sp,
         lineHeight = 18.sp,
     ),
+    // Uppercase micro-labels. Wide tracking is what stops small caps reading as
+    // cramped; these are always paired with .uppercase() at the call site.
     labelLarge = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
+        letterSpacing = 1.2.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.3.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+        lineHeight = 14.sp,
+        letterSpacing = 1.5.sp,
     ),
     labelSmall = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.8.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 10.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 1.6.sp,
     ),
 )

@@ -8,62 +8,62 @@ import androidx.compose.runtime.Composable
 
 private val LightColors = lightColorScheme(
     primary = Signal,
-    onPrimary = Surface,
-    primaryContainer = SignalWash,
-    onPrimaryContainer = Ink,
+    onPrimary = Paper,
+    primaryContainer = Signal,
+    onPrimaryContainer = Paper,
 
-    secondary = Slate,
-    onSecondary = Surface,
-    secondaryContainer = Paper,
+    secondary = Ink,
+    onSecondary = Paper,
+    secondaryContainer = Bone,
     onSecondaryContainer = Ink,
 
-    tertiary = InkSoft,
-    onTertiary = Surface,
+    tertiary = Ink,
+    onTertiary = Paper,
 
     background = Paper,
     onBackground = Ink,
-    surface = Surface,
+    surface = Paper,
     onSurface = Ink,
-    surfaceVariant = Paper,
-    onSurfaceVariant = SlateMuted,
+    surfaceVariant = Bone,
+    onSurfaceVariant = Muted,
 
     error = Danger,
-    onError = Surface,
-    errorContainer = DangerWash,
+    onError = Paper,
+    errorContainer = Paper,
     onErrorContainer = Danger,
 
-    outline = Line,
-    outlineVariant = Line,
+    outline = Ink,
+    outlineVariant = Faint,
 )
 
 private val DarkColors = darkColorScheme(
     primary = SignalDark,
     onPrimary = InkDark,
-    primaryContainer = SignalWashDark,
-    onPrimaryContainer = ChalkDark,
+    primaryContainer = SignalDark,
+    onPrimaryContainer = InkDark,
 
-    secondary = SlateDark,
+    secondary = Chalk,
     onSecondary = InkDark,
-    secondaryContainer = SurfaceDarkRaised,
-    onSecondaryContainer = ChalkDark,
+    secondaryContainer = SurfaceDark,
+    onSecondaryContainer = Chalk,
 
-    tertiary = ChalkDark,
+    tertiary = Chalk,
     onTertiary = InkDark,
 
     background = InkDark,
-    onBackground = ChalkDark,
-    surface = SurfaceDark,
-    onSurface = ChalkDark,
-    surfaceVariant = SurfaceDarkRaised,
-    onSurfaceVariant = SlateDark,
+    onBackground = Chalk,
+    surface = InkDark,
+    onSurface = Chalk,
+    surfaceVariant = SurfaceDark,
+    onSurfaceVariant = MutedDark,
 
     error = DangerDark,
     onError = InkDark,
-    errorContainer = DangerWashDark,
+    errorContainer = InkDark,
     onErrorContainer = DangerDark,
 
-    outline = LineDark,
-    outlineVariant = LineDark,
+    outline = Chalk,
+    outlineVariant = FaintDark,
 )
 
 /**
@@ -82,6 +82,7 @@ fun ToolboxTheme(
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = ToolboxTypography,
+        shapes = ToolboxShapes,
         content = content
     )
 }

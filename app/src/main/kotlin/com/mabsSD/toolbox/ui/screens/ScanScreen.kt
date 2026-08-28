@@ -36,13 +36,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import com.mabsSD.toolbox.ui.components.PrimaryButton
+import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -140,16 +141,7 @@ fun ScanScreen(
     if (pages.isEmpty() && !exporting) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Scan to PDF") },
-                    navigationIcon = {
-                        OutlinedButton(onClick = onBack) { Text("Back") }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
+                ToolboxTopBar(title = "Scan to PDF", onBack = onBack)
             },
             modifier = modifier.fillMaxSize()
         ) { padding ->
@@ -167,9 +159,7 @@ fun ScanScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(24.dp))
-                OutlinedButton(onClick = { startScan() }) {
-                    Text("Start scanning")
-                }
+                PrimaryButton("Start scanning", { startScan() })
                 errorMessage?.let {
                     Spacer(Modifier.height(16.dp))
                     Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
@@ -183,16 +173,7 @@ fun ScanScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Pages (${pages.size})") },
-                navigationIcon = {
-                    OutlinedButton(onClick = onBack) { Text("Back") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+            ToolboxTopBar(title = "Pages (${pages.size})", onBack = onBack)
         },
         modifier = modifier.fillMaxSize()
     ) { padding ->
@@ -289,6 +270,7 @@ fun ScanScreen(
             Spacer(Modifier.height(12.dp))
 
             OutlinedButton(
+                shape = RectangleShape,
                 onClick = {
                     exporting = true
                     doExport(context, pages) { result, error ->

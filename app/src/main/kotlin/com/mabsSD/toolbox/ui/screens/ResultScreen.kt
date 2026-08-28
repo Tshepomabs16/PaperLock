@@ -28,8 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import com.mabsSD.toolbox.ui.components.SecondaryButton
+import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -130,16 +131,7 @@ fun ResultScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Result") },
-                navigationIcon = {
-                    OutlinedButton(onClick = onBack) { Text("Back") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+            ToolboxTopBar(title = "Result", onBack = onBack)
         },
         modifier = modifier.fillMaxSize()
     ) { padding ->
@@ -154,7 +146,7 @@ fun ResultScreen(
             ) {
                 Text("No result to show.", style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = onBack) { Text("Go back") }
+                SecondaryButton("Go back", onBack)
             }
             return@Scaffold
         }
@@ -208,6 +200,7 @@ fun ResultScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
+                    shape = RectangleShape,
                     onClick = { saveLauncher.launch(result.outputName) },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -216,6 +209,7 @@ fun ResultScreen(
                     Text("Save…")
                 }
                 Button(
+                    shape = RectangleShape,
                     onClick = {
                         val share = Intent(Intent.ACTION_SEND).apply {
                             type = mimeTypeFor(result.outputName)
@@ -231,6 +225,7 @@ fun ResultScreen(
                     Text("Share")
                 }
                 OutlinedButton(
+                    shape = RectangleShape,
                     onClick = {
                         val open = Intent(Intent.ACTION_VIEW).apply {
                             setDataAndType(result.outputUri, mimeTypeFor(result.outputName))

@@ -22,8 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import com.mabsSD.toolbox.ui.components.SecondaryButton
+import com.mabsSD.toolbox.ui.components.PrimaryButton
+import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -75,16 +77,7 @@ fun ToolScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(tool?.title ?: "Tool") },
-                navigationIcon = {
-                    OutlinedButton(onClick = onBack) { Text("Back") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+            ToolboxTopBar(title = tool?.title ?: "Tool", onBack = onBack)
         },
         modifier = modifier.fillMaxSize()
     ) { padding ->
@@ -100,7 +93,7 @@ fun ToolScreen(
                 ) {
                     Text("Unknown tool: $toolId")
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = onBack) { Text("Go back") }
+                    SecondaryButton("Go back", onBack)
                 }
             }
 
@@ -164,6 +157,7 @@ fun ToolScreen(
                             ToolInputType.ANY -> "Pick a file"
                         }
                         Button(
+                            shape = RectangleShape,
                             onClick = {
                                 pendingInputType.value = inputType
                                 when (inputType) {
@@ -212,7 +206,7 @@ private fun RunningState(
             )
         }
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onCancel) { Text("Cancel") }
+        SecondaryButton("Cancel", onCancel)
     }
 }
 
@@ -243,8 +237,8 @@ private fun ErrorState(
         )
         Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = onBack) { Text("Back") }
-            Button(onClick = onRetry) { Text("Try again") }
+            SecondaryButton("Back", onBack)
+            PrimaryButton("Try again", onRetry)
         }
     }
 }

@@ -13,17 +13,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MergeType
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Card
@@ -40,6 +41,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.mabsSD.toolbox.tools.ToolRegistry
+import com.mabsSD.toolbox.ui.theme.BorderWidth
+import com.mabsSD.toolbox.ui.theme.BorderWidthThin
 
 data class ToolItem(
     val id: String,
@@ -77,6 +80,8 @@ fun HomeScreen(
     onToolSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val readyCount = defaultTools.count { isAvailable(it.id) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -87,18 +92,24 @@ fun HomeScreen(
                 start = 20.dp,
                 end = 20.dp,
                 top = inner.calculateTopPadding(),
-                bottom = inner.calculateBottomPadding() + 24.dp,
+                bottom = inner.calculateBottomPadding() + 32.dp,
             ),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) { Header() }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Masthead(total = defaultTools.size, ready = readyCount)
+            }
 
-            items(defaultTools, key = { it.id }) { tool ->
+            itemsIndexed(defaultTools, key = { _, t -> t.id }) { index, tool ->
                 ToolCard(
                     tool = tool,
+                    index = index + 1,
                     enabled = isAvailable(tool.id),
+                    // One accent block per screen. The first available tool is the
+                    // primary action; everything else is an outline.
+                    accent = isAvailable(tool.id) && index == 0,
                     onClick = { onToolSelected(tool.id) }
                 )
             }
@@ -107,45 +118,56 @@ fun HomeScreen(
 }
 
 @Composable
-private fun Header(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(top = 24.dp, bottom = 20.dp)) {
+private fun Masthead(total: Int, ready: Int, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(top = 28.dp, bottom = 22.dp)) {
+        StatusLine()
+
+        Spacer(Modifier.height(18.dp))
+
         Text(
-            text = "Toolbox",
-            style = MaterialTheme.typography.displaySmall,
+            text = "TOOLBOX",
+            style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Full-bleed rule. The heavy horizontal line is what anchors the
+        // oversized wordmark and separates masthead from grid without a gap.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(BorderWidth)
+                .background(MaterialTheme.colorScheme.onBackground)
+        )
+
         Spacer(Modifier.height(10.dp))
-        PrivacyBadge()
+
+        Text(
+            text = "$total TOOLS — $ready READY",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 /**
  * The privacy claim, stated once, at the top. It is the product's whole reason to
- * exist, so it gets to be the first thing on the screen rather than a settings
- * footnote nobody reads.
+ * exist, so it leads the screen rather than sitting in a settings footnote.
  */
 @Composable
-private fun PrivacyBadge(modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(percent = 50)
-            )
-            .padding(horizontal = 12.dp, vertical = 7.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(14.dp)
+private fun StatusLine(modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Box(
+            Modifier
+                .size(7.dp)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
         )
-        Spacer(Modifier.size(7.dp))
+        Spacer(Modifier.width(9.dp))
         Text(
-            text = "Nothing leaves your phone",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
+            text = "OFFLINE — NOTHING LEAVES YOUR PHONE",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }
@@ -153,85 +175,102 @@ private fun PrivacyBadge(modifier: Modifier = Modifier) {
 @Composable
 fun ToolCard(
     tool: ToolItem,
+    index: Int,
     enabled: Boolean,
+    accent: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(20.dp)
-    val outline = MaterialTheme.colorScheme.outline
+    val scheme = MaterialTheme.colorScheme
+
+    val container = when {
+        accent -> scheme.primary
+        enabled -> scheme.surface
+        else -> scheme.background
+    }
+    val content = when {
+        accent -> scheme.onPrimary
+        enabled -> scheme.onSurface
+        else -> scheme.onSurfaceVariant
+    }
+    // Disabled blocks drop to a hairline in the faint tone so the grid still reads
+    // as a grid, but unbuilt tools visibly recede behind the live ones.
+    val borderColor = if (enabled) scheme.onBackground else scheme.outlineVariant
+    val borderWidth = if (enabled) BorderWidth else BorderWidthThin
 
     Card(
         onClick = onClick,
         enabled = enabled,
-        shape = shape,
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier
             .fillMaxWidth()
-            .height(132.dp)
-            .border(1.dp, outline, shape)
-            .semantics {
-                if (!enabled) stateDescription = "Coming soon"
-            },
+            .height(158.dp)
+            .border(borderWidth, borderColor, MaterialTheme.shapes.medium)
+            .semantics { if (!enabled) stateDescription = "Coming soon" },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            // Disabled cards recede into the page rather than sitting proud of it,
-            // so "not ready" is legible before the label is read.
-            disabledContainerColor = MaterialTheme.colorScheme.background,
+            containerColor = container,
+            contentColor = content,
+            disabledContainerColor = container,
+            disabledContentColor = content,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconTile(icon = tool.icon, enabled = enabled)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Icon(
+                    imageVector = tool.icon,
+                    contentDescription = null,
+                    tint = content,
+                    modifier = Modifier.size(26.dp)
+                )
+                Text(
+                    text = index.toString().padStart(2, '0'),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (accent) content else scheme.onSurfaceVariant,
+                )
+            }
 
             Column {
                 Text(
-                    text = tool.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (enabled) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    text = tool.title.uppercase(),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = content,
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = if (enabled) tool.subtitle else "Coming soon",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (enabled) tool.subtitle else "COMING SOON",
+                        style = if (enabled) {
+                            MaterialTheme.typography.bodySmall
+                        } else {
+                            MaterialTheme.typography.labelSmall
+                        },
+                        color = if (accent) {
+                            content.copy(alpha = 0.85f)
+                        } else {
+                            scheme.onSurfaceVariant
+                        },
+                    )
+                    if (accent) {
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = content,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun IconTile(icon: ImageVector, enabled: Boolean, modifier: Modifier = Modifier) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(44.dp)
-            .background(
-                color = if (enabled) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-                shape = RoundedCornerShape(13.dp)
-            )
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (enabled) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            modifier = Modifier.size(22.dp)
-        )
     }
 }
