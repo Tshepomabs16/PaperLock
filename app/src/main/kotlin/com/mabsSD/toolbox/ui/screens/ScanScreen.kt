@@ -99,16 +99,25 @@ fun ScanScreen(
     val scanLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-            val pageUris: List<Uri> = scanResult?.pages?.map { it.imageUri } ?: emptyList()
-            if (pageUris.isNotEmpty()) {
-                decodePages(context, pageUris) { decoded ->
-                    pages = decoded
-                    selectedPageIndex = 0
-                    errorMessage = null
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                val pageUris: List<Uri> = scanResult?.pages?.map { it.imageUri } ?: emptyList()
+                if (pageUris.isNotEmpty()) {
+                    decodePages(context, pageUris) { decoded ->
+                        pages = decoded
+                        selectedPageIndex = 0
+                        errorMessage = null
+                    }
+                } else {
+                    // Success with nothing attached. Happens when ML Kit's delegate
+                    // logs "Failed to handle result" and still returns RESULT_OK.
+                    errorMessage = "The scanner finished but returned no pages. Please try again."
                 }
             }
+            // Backing out of the camera is a normal exit, not a failure.
+            Activity.RESULT_CANCELED -> Unit
+            else -> errorMessage = "The scanner stopped unexpectedly (result code ${result.resultCode})."
         }
     }
 
