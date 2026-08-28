@@ -68,12 +68,18 @@ dependencies {
     implementation(libs.androidx.room.runtime)
 
     // ML Kit
-    implementation(libs.mlkit.document.scanner) {
-        exclude(group = "com.google.android.datatransport")
-    }
-    implementation(libs.mlkit.text.recognition) {
-        exclude(group = "com.google.android.datatransport")
-    }
+    //
+    // Do NOT exclude com.google.android.datatransport here. ML Kit's telemetry
+    // classes are touched during GmsDocumentScanning.getClient(), so removing
+    // them crashes the scanner with NoClassDefFoundError on CCTDestination the
+    // moment ScanScreen composes.
+    //
+    // The hard rule is enforced by the absent INTERNET permission, not by
+    // deleting these classes: with no permission the transport cannot reach the
+    // network regardless. Keeping them present costs nothing and keeps the
+    // headline feature working.
+    implementation(libs.mlkit.document.scanner)
+    implementation(libs.mlkit.text.recognition)
 
     // PDF
     implementation(libs.pdfbox.android)
