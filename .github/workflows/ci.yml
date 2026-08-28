@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   build:
@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # AGP 8.7 supports JDK 17-21. Do not bump past 21 without also bumping AGP.
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -22,33 +23,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      # Release is assembled too, not just debug: release is what ships, and the
+      # hard-rule check below needs the release merged manifest to exist.
+      - name: Assemble
+        run: ./gradlew assembleDebug assembleRelease
 
-      - name: Build
-        run: ./gradlew build
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
 
-      - name: Run tests
-        run: ./gradlew test
-
-      - name: Check for INTERNET permission
-        run: |
-          MERGED_MANIFEST=$(find app/build -name "AndroidManifest.xml" -path "*/merged/*" | head -1)
-          if [ -f "$MERGED_MANIFEST" ]; then
-            if grep -q "android.permission.INTERNET" "$MERGED_MANIFEST"; then
-              echo "ERROR: INTERNET permission found in merged manifest!"
-              echo "This violates the hard rule: no data leaves the device."
-              exit 1
-            fi
-            echo "PASS: No INTERNET permission in merged manifest."
-          else
-            echo "WARNING: Merged manifest not found. Build first, then check."
-          fi
-
-      - name: Verify no INTERNET permission in source
-        run: |
-          if grep -r "android.permission.INTERNET" app/src/main; then
-            echo "ERROR: INTERNET permission found in source!"
-            exit 1
-          fi
-          echo "PASS: No INTERNET permission in source."
+      - name: Hard rule — no INTERNET permission
+        run: ./scripts/check-no-internet.sh

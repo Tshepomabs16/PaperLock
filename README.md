@@ -42,16 +42,33 @@ Every free scanner uploads your ID documents to somebody's server. Toolbox decla
 
 ## Development
 
+Requires **JDK 17–21**. AGP 8.7 rejects JDK 25 with a bare `What went wrong: 25.0.3`,
+which is easy to mistake for a corrupt build. Android Studio uses its own bundled JDK,
+so a build can succeed in the IDE and fail from the terminal on the same machine.
+
 ```bash
-# Build
-./gradlew build
+# Build (release included — the hard-rule check needs its merged manifest)
+./gradlew assembleDebug assembleRelease
 
 # Run tests
-./gradlew test
+./gradlew testDebugUnitTest
 
-# Check for INTERNET permission
-grep -r "android.permission.INTERNET" app/src/
+# Verify the hard rule (run after a build)
+./scripts/check-no-internet.sh
 ```
+
+### How the hard rule is enforced
+
+ML Kit and Play services pull `INTERNET` in transitively, so the app manifest strips it
+with `tools:node="remove"` and the ML Kit dependencies exclude
+`com.google.android.datatransport`. The merged release manifest ends up with only
+`WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` and `FOREGROUND_SERVICE`, all from WorkManager.
+
+[`scripts/check-no-internet.sh`](scripts/check-no-internet.sh) is the guardrail, run by CI
+on every push. It fails if the source manifest stops stripping `INTERNET`, if any merged
+manifest grants it, **or if no merged manifest is found at all** — an unverifiable build is
+treated as a failure rather than a pass, so the check cannot go green without having
+actually checked something.
 
 ## License
 
