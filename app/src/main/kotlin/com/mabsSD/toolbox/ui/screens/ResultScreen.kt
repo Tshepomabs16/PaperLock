@@ -15,19 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import com.mabsSD.toolbox.ui.components.BorderedBlock
+import com.mabsSD.toolbox.ui.components.SectionLabel
+import com.mabsSD.toolbox.ui.components.PrimaryButton
 import com.mabsSD.toolbox.ui.components.SecondaryButton
 import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
@@ -37,13 +31,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mabsSD.toolbox.tools.ResultStore
 import com.mabsSD.toolbox.tools.ToolResult
@@ -158,27 +150,12 @@ fun ResultScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = result.outputName,
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = formatFileSize(result.outputSize),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            BorderedBlock {
+                SectionLabel("Done — ${formatFileSize(result.outputSize)}")
+                Text(
+                    text = result.outputName,
+                    style = MaterialTheme.typography.headlineSmall,
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -195,21 +172,23 @@ fun ResultScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
+            // Save is the primary action and gets the full width. Three equal
+            // buttons in one row could not fit their labels and truncated to
+            // "Shar e" / "Ope n" on a 393dp screen.
+            PrimaryButton(
+                text = "Save to…",
+                onClick = { saveLauncher.launch(result.outputName) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    shape = RectangleShape,
-                    onClick = { saveLauncher.launch(result.outputName) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text("Save…")
-                }
-                Button(
-                    shape = RectangleShape,
+                SecondaryButton(
+                    text = "Share",
                     onClick = {
                         val share = Intent(Intent.ACTION_SEND).apply {
                             type = mimeTypeFor(result.outputName)
@@ -219,13 +198,9 @@ fun ResultScreen(
                         context.startActivity(Intent.createChooser(share, "Share ${result.outputName}"))
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text("Share")
-                }
-                OutlinedButton(
-                    shape = RectangleShape,
+                )
+                SecondaryButton(
+                    text = "Open",
                     onClick = {
                         val open = Intent(Intent.ACTION_VIEW).apply {
                             setDataAndType(result.outputUri, mimeTypeFor(result.outputName))
@@ -237,11 +212,7 @@ fun ResultScreen(
                         }
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text("Open")
-                }
+                )
             }
 
             if (savedToast) {

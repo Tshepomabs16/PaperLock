@@ -57,7 +57,19 @@ class WorkingFileManager(private val context: Context) {
         }
     }
 
+    /**
+     * Size in bytes, for both content:// and file:// URIs.
+     *
+     * Tool outputs come from createTempFile, which returns Uri.fromFile, and
+     * ContentResolver.query returns null for the file:// scheme. Querying alone
+     * therefore reported 0 B for every result the app produced, even when the
+     * bytes were on disk. Check the filesystem first, then fall back to the
+     * resolver for content:// inputs.
+     */
     fun getFileSize(uri: Uri): Long {
+        if (uri.scheme == "file") {
+            return uri.path?.let { File(it).length() } ?: 0L
+        }
         val cursor = context.contentResolver.query(uri, null, null, null, null)
         return cursor?.use {
             if (it.moveToFirst()) {

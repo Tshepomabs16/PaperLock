@@ -12,17 +12,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import com.mabsSD.toolbox.ui.components.SecondaryButton
+import com.mabsSD.toolbox.ui.components.BorderedBlock
+import com.mabsSD.toolbox.ui.components.SectionLabel
 import com.mabsSD.toolbox.ui.components.PrimaryButton
 import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
@@ -32,7 +30,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -129,26 +126,24 @@ fun ToolScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    BorderedBlock {
+                        SectionLabel("What this does")
                         Text(
                             text = tool.description,
                             style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
                         )
                     }
 
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(28.dp))
 
-                    Text("Select a file, then run the tool.", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(12.dp))
+                    SectionLabel("Step 1")
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Select a file, then run the tool.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(14.dp))
 
                     tool.acceptedInputs.forEach { inputType ->
                         val label = when (inputType) {
@@ -156,8 +151,8 @@ fun ToolScreen(
                             ToolInputType.IMAGE -> "Pick an image"
                             ToolInputType.ANY -> "Pick a file"
                         }
-                        Button(
-                            shape = RectangleShape,
+                        PrimaryButton(
+                            text = label,
                             onClick = {
                                 pendingInputType.value = inputType
                                 when (inputType) {
@@ -169,9 +164,7 @@ fun ToolScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                        ) {
-                            Text(label)
-                        }
+                        )
                     }
                 }
             }
