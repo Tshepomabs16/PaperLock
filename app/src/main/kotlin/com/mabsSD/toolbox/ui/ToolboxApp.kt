@@ -10,8 +10,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mabsSD.toolbox.ui.screens.HomeScreen
+import com.mabsSD.toolbox.ui.screens.MergeScreen
 import com.mabsSD.toolbox.ui.screens.ResultScreen
 import com.mabsSD.toolbox.ui.screens.ScanScreen
+import com.mabsSD.toolbox.ui.screens.SplitScreen
 import com.mabsSD.toolbox.ui.screens.ToolScreen
 
 sealed class Screen(val route: String) {
@@ -50,16 +52,20 @@ fun ToolboxApp(
             )
         ) { backStackEntry ->
             val toolId = backStackEntry.arguments?.getString("toolId") ?: return@composable
-            if (toolId == "scan") {
-                ScanScreen(
-                    onNavigateToResult = { navController.navigate(Screen.Result.createRoute("last")) },
-                    onBack = { navController.popBackStack() }
-                )
-            } else {
-                ToolScreen(
+            val toResult = { navController.navigate(Screen.Result.createRoute("last")) }
+            val back = { navController.popBackStack(); Unit }
+
+            // Tools whose input cannot be expressed as "pick one file" get their
+            // own screen: scan is a camera flow, split needs a page range, merge
+            // needs several files in a chosen order. Everything else is generic.
+            when (toolId) {
+                "scan" -> ScanScreen(onNavigateToResult = toResult, onBack = back)
+                "split" -> SplitScreen(onNavigateToResult = toResult, onBack = back)
+                "merge" -> MergeScreen(onNavigateToResult = toResult, onBack = back)
+                else -> ToolScreen(
                     toolId = toolId,
-                    onNavigateToResult = { navController.navigate(Screen.Result.createRoute("last")) },
-                    onBack = { navController.popBackStack() }
+                    onNavigateToResult = toResult,
+                    onBack = back
                 )
             }
         }

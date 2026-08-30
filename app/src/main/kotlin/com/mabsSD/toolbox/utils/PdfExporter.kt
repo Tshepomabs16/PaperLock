@@ -22,12 +22,15 @@ data class PdfPageSpec(
 )
 
 /**
- * PDF engine built on PdfBox-Android. Every PDF write in the app goes
- * through this class so the underlying library can be swapped later without
- * touching call sites (P2-02: the "wrap it behind PdfEngine" rule).
+ * Builds a PDF from scanned bitmaps.
  *
- * The exporter works page-by-page, re-encoding buffers immediately, so large
- * scans are not held in memory at once (P1-09 memory pass).
+ * Distinct from [com.mabsSD.toolbox.pdf.PdfEngine], which manipulates existing
+ * documents: this one only creates them from images, a different job with
+ * different memory characteristics. Both sit on PdfBox-Android and would need
+ * porting together if the library is ever swapped.
+ *
+ * Works page-by-page, re-encoding buffers immediately, so large scans are not
+ * held in memory at once (P1-09 memory pass).
  */
 object PdfExporter {
 
