@@ -1,7 +1,8 @@
 package com.mabsSD.toolbox.utils
 
 import android.graphics.Bitmap
-import android.graphics.Color
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 enum class ScanFilter(val uiName: String) {
     ORIGINAL("Original"),
@@ -10,150 +11,115 @@ enum class ScanFilter(val uiName: String) {
 }
 
 /**
- * On-device image processing for the scan pipeline. All operations are
- * powered by our own pixel loops over a [Bitmap] — no network, no third
- * party — so the privacy property holds end to end.
+ * On-device image processing for the scan pipeline. Our own pixel loops over
+ * a [Bitmap] — no network, no third party — so the privacy property holds end
+ * to end.
+ *
+ * Filters run **in place** on a mutable bitmap. The previous version returned
+ * a fresh bitmap and allocated three full-size IntArrays per call; on a
+ * 2400px page that is ~80 MB transient per filter, which across a page tray
+ * of thumbnails was a large part of why long scans ran out of memory.
  */
 object ImageProcessor {
 
+    /** Local-mean window at the reference resolution below, in pixels. */
+    private const val BASE_WINDOW = 8
+    private const val REFERENCE_LONG_SIDE = 2400f
+
     /**
-     * Convert an ARGB [Bitmap] to grayscale, returning a new mutable bitmap.
-     * Uses luminance weighting that matches human perception.
+     * Apply [filter] to [bitmap], modifying it. [bitmap] must be mutable.
+     * [ScanFilter.ORIGINAL] leaves it untouched.
      */
-    fun toGrayscale(input: Bitmap): Bitmap {
-        val output = Bitmap.createBitmap(input.width, input.height, Bitmap.Config.ARGB_8888)
-        val pixels = IntArray(input.width * input.height)
-        input.getPixels(pixels, 0, input.width, 0, 0, input.width, input.height)
+    fun applyInPlace(bitmap: Bitmap, filter: ScanFilter) {
+        if (filter == ScanFilter.ORIGINAL) return
+        require(bitmap.isMutable) { "applyInPlace needs a mutable bitmap" }
+
+        val w = bitmap.width
+        val h = bitmap.height
+        val pixels = IntArray(w * h)
+        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        toGrayValues(pixels)
+
+        when (filter) {
+            ScanFilter.GRAYSCALE -> for (i in pixels.indices) {
+                val g = pixels[i]
+                pixels[i] = (0xFF shl 24) or (g shl 16) or (g shl 8) or g
+            }
+            ScanFilter.BINARY -> adaptiveThreshold(pixels, w, h, windowFor(w, h))
+            ScanFilter.ORIGINAL -> Unit
+        }
+        bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
+    }
+
+    /** Copying variant, for callers that must keep the source intact. */
+    fun apply(input: Bitmap, filter: ScanFilter): Bitmap {
+        val copy = input.copy(Bitmap.Config.ARGB_8888, true)
+        applyInPlace(copy, filter)
+        return copy
+    }
+
+    /**
+     * The local-mean window scales with resolution, so a thumbnail, the
+     * on-screen preview and the exported page all threshold to the same look.
+     * A fixed 8px window would be far too coarse on a 320px thumbnail.
+     */
+    private fun windowFor(w: Int, h: Int): Int =
+        max(2, (BASE_WINDOW * max(w, h) / REFERENCE_LONG_SIDE).roundToInt())
+
+    /** ARGB -> perceptual luminance 0..255, stored back into the same array. */
+    private fun toGrayValues(pixels: IntArray) {
         for (i in pixels.indices) {
             val p = pixels[i]
-            val r = Color.red(p)
-            val g = Color.green(p)
-            val b = Color.blue(p)
-            val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt().coerceIn(0, 255)
-            pixels[i] = Color.rgb(gray, gray, gray)
+            val r = (p shr 16) and 0xFF
+            val g = (p shr 8) and 0xFF
+            val b = p and 0xFF
+            pixels[i] = (299 * r + 587 * g + 114 * b) / 1000
         }
-        output.setPixels(pixels, 0, input.width, 0, 0, input.width, input.height)
-        return output
     }
 
     /**
-     * Otsu's method: choose a global threshold that minimises intra-class
-     * variance, split into foreground/background. Returns the threshold value.
-     */
-    private fun otsuThreshold(histogram: IntArray, total: Int): Int {
-        var sum = 0L
-        for (t in 0 until 256) sum += t.toLong() * histogram[t]
-        var sumB = 0L
-        var wB = 0
-        var wF: Int
-        var maxVariance = -1.0
-        var threshold = 127
-
-        for (t in 0 until 256) {
-            wB += histogram[t]
-            if (wB == 0) continue
-            wF = total - wB
-            if (wF == 0) break
-            sumB += t.toLong() * histogram[t]
-            val mB = sumB.toDouble() / wB
-            val mF = (sum - sumB).toDouble() / wF
-            val between = wB.toDouble() * wF.toDouble() * (mB - mF) * (mB - mF)
-            if (between > maxVariance) {
-                maxVariance = between
-                threshold = t
-            }
-        }
-        return threshold
-    }
-
-    private fun buildHistogram(grayscale: Bitmap): Pair<IntArray, Int> {
-        val histogram = IntArray(256)
-        val pixels = IntArray(grayscale.width * grayscale.height)
-        grayscale.getPixels(pixels, 0, grayscale.width, 0, 0, grayscale.width, grayscale.height)
-        for (p in pixels) {
-            histogram[Color.red(p)]++
-        }
-        return histogram to pixels.size
-    }
-
-    /**
-     * Global B&W via Otsu. Best for evenly-lit pages; fast single pass.
-     */
-    fun toBinaryOtsu(input: Bitmap): Bitmap {
-        val gray = toGrayscale(input)
-        val (histogram, total) = buildHistogram(gray)
-        val threshold = otsuThreshold(histogram, total)
-
-        val output = Bitmap.createBitmap(input.width, input.height, Bitmap.Config.ARGB_8888)
-        val pixels = IntArray(input.width * input.height)
-        gray.getPixels(pixels, 0, input.width, 0, 0, input.width, input.height)
-        for (i in pixels.indices) {
-            val value = Color.red(pixels[i])
-            val binary = if (value <= threshold) Color.BLACK else Color.WHITE
-            pixels[i] = binary
-        }
-        output.setPixels(pixels, 0, input.width, 0, 0, input.width, input.height)
-        gray.recycle()
-        return output
-    }
-
-    /**
-     * Adaptive local threshold (Sauvola-style using local mean) for pages
-     * with uneven lighting. Costlier than Otsu but yields clean text where a
-     * global threshold clips at the wrong luminance.
+     * Adaptive local-mean threshold (Sauvola-style) for unevenly lit pages:
+     * a pixel is ink if it is darker than (1 - k) of its neighbourhood mean.
      *
-     * @param window neighborhood radius (pixels) used to estimate local mean.
-     * @param k scaling factor in the range (0, 1); lower keeps more ink.
+     * The mean comes from a summed-area table, so each pixel costs four
+     * lookups regardless of window size. The previous version summed the
+     * 17×17 window directly — ~1.2 billion operations for one 2400px page,
+     * run on the UI thread for every thumbnail.
+     *
+     * [gray] holds luminance on entry and ARGB black/white on exit.
      */
-    fun toBinaryAdaptive(
-        input: Bitmap,
-        window: Int = 8,
-        k: Double = 0.2
-    ): Bitmap {
-        val gray = toGrayscale(input)
-        val w = gray.width
-        val h = gray.height
-        val pixels = IntArray(w * h)
-        gray.getPixels(pixels, 0, w, 0, 0, w, h)
-        val grayVals = IntArray(w * h)
-        for (i in pixels.indices) grayVals[i] = Color.red(pixels[i])
+    private fun adaptiveThreshold(gray: IntArray, w: Int, h: Int, window: Int, k: Double = 0.2) {
+        // 255 * pixel count must fit in an Int; scan pages are decoded at
+        // <= 2400px a side, well inside this.
+        require(w.toLong() * h * 255 < Int.MAX_VALUE) { "Image too large for the integral image" }
 
-        val output = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val outPixels = IntArray(w * h)
-
+        val stride = w + 1
+        val integral = IntArray(stride * (h + 1))
         for (y in 0 until h) {
+            var rowSum = 0
+            val src = y * w
+            val dst = (y + 1) * stride
             for (x in 0 until w) {
-                var sum = 0
-                var count = 0
-                val y0 = (y - window).coerceAtLeast(0)
-                val y1 = (y + window).coerceAtMost(h - 1)
-                val x0 = (x - window).coerceAtLeast(0)
-                val x1 = (x + window).coerceAtMost(w - 1)
-                for (yy in y0..y1) {
-                    val rowOffset = yy * w
-                    for (xx in x0..x1) {
-                        sum += grayVals[rowOffset + xx]
-                        count++
-                    }
-                }
-                val mean = sum.toDouble() / count
-                val value = grayVals[y * w + x]
-                val t = mean * (1.0 - k)
-                outPixels[y * w + x] = if (value <= t) Color.BLACK else Color.WHITE
+                rowSum += gray[src + x]
+                integral[dst + x + 1] = integral[dst - stride + x + 1] + rowSum
             }
         }
-        output.setPixels(outPixels, 0, w, 0, 0, w, h)
-        gray.recycle()
-        return output
-    }
 
-    /**
-     * Apply a [ScanFilter] to [input], returning a new bitmap. [ORIGINAL]
-     * returns a copy (caller may decide to skip allocation).
-     */
-    fun apply(input: Bitmap, filter: ScanFilter): Bitmap = when (filter) {
-        ScanFilter.ORIGINAL -> input.copy(Bitmap.Config.ARGB_8888, false)
-        ScanFilter.GRAYSCALE -> toGrayscale(input)
-        ScanFilter.BINARY -> toBinaryAdaptive(input)
+        val black = 0xFF000000.toInt()
+        val white = 0xFFFFFFFF.toInt()
+        val scale = 1.0 - k
+        for (y in 0 until h) {
+            val y0 = max(0, y - window)
+            val y1 = minOf(h - 1, y + window) + 1
+            for (x in 0 until w) {
+                val x0 = max(0, x - window)
+                val x1 = minOf(w - 1, x + window) + 1
+                val sum = integral[y1 * stride + x1] - integral[y0 * stride + x1] -
+                    integral[y1 * stride + x0] + integral[y0 * stride + x0]
+                val count = (x1 - x0) * (y1 - y0)
+                val i = y * w + x
+                gray[i] = if (gray[i] * count <= sum * scale) black else white
+            }
+        }
     }
 }

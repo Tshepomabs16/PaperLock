@@ -35,7 +35,9 @@ data class PdfPageSpec(
 object PdfExporter {
 
     /**
-     * Write a multi-page PDF from [pages] to [output].
+     * Write a multi-page PDF from [pages] to [output]. The caller owns the
+     * bitmaps and recycles them; for long documents prefer [exportPages],
+     * which never needs more than one page in memory.
      *
      * @param pageWidthPt / [pageHeightPt] set the page size in PDF points.
      *   Pass `null, null` to size each page to the source image's aspect.
@@ -48,38 +50,61 @@ object PdfExporter {
         jpegQuality: Int = DEFAULT_JPEG_QUALITY
     ) {
         check(pages.isNotEmpty()) { "Cannot export an empty document" }
+        writePages(pages.size, output, pageWidthPt, pageHeightPt, jpegQuality, recycle = false) { pages[it] }
+    }
 
+    /**
+     * Streaming export: [producePage] is called for one page at a time, and
+     * that page's bitmap is encoded and recycled before the next is asked for.
+     * Peak memory is one decoded page plus the compressed JPEGs so far, no
+     * matter how many pages there are.
+     */
+    fun exportPages(
+        pageCount: Int,
+        output: OutputStream,
+        jpegQuality: Int = DEFAULT_JPEG_QUALITY,
+        producePage: (Int) -> PdfPageSpec,
+    ) {
+        check(pageCount > 0) { "Cannot export an empty document" }
+        writePages(pageCount, output, null, null, jpegQuality, recycle = true, producePage)
+    }
+
+    private fun writePages(
+        pageCount: Int,
+        output: OutputStream,
+        pageWidthPt: Float?,
+        pageHeightPt: Float?,
+        jpegQuality: Int,
+        recycle: Boolean,
+        producePage: (Int) -> PdfPageSpec,
+    ) {
         PDDocument().use { document ->
-            pages.forEach { spec ->
+            for (index in 0 until pageCount) {
+                val spec = producePage(index)
                 val bitmap = spec.bitmap
-                val page = PDPage()
-                page.rotation = spec.rotationDegrees
-
-                val widthPt = pageWidthPt
-                    ?: ptFromPx(bitmap.width)
-                val heightPt = pageHeightPt
-                    ?: ptFromPx(bitmap.height)
-                page.mediaBox = PDRectangle(widthPt, heightPt)
-
-                document.addPage(page)
+                val widthPt = pageWidthPt ?: ptFromPx(bitmap.width)
+                val heightPt = pageHeightPt ?: ptFromPx(bitmap.height)
 
                 val imageBytes = encodeJpeg(bitmap, jpegQuality)
-                val image = JPEGFactory.createFromStream(
-                    document,
-                    imageBytes.inputStream()
-                )
+                // The pixels are no longer needed once encoded; free them
+                // before PdfBox does any work of its own.
+                if (recycle) bitmap.recycle()
 
-                val content = PDPageContentStream(
+                val page = PDPage(PDRectangle(widthPt, heightPt))
+                page.rotation = spec.rotationDegrees
+                document.addPage(page)
+
+                val image = JPEGFactory.createFromStream(document, imageBytes.inputStream())
+                PDPageContentStream(
                     document,
                     page,
                     PDPageContentStream.AppendMode.APPEND,
                     true,
                     true
-                )
-                content.drawImage(image, 0f, 0f, widthPt, heightPt)
-                content.close()
+                ).use { content ->
+                    content.drawImage(image, 0f, 0f, widthPt, heightPt)
+                }
             }
-
             document.save(output)
         }
     }
@@ -97,8 +122,16 @@ object PdfExporter {
     /**
      * Load a page [Uri] backed by a file (as returned by the ML Kit scanner)
      * as a downsampled bitmap to avoid OOM.
+     *
+     * @param mutable decode straight into a mutable bitmap so filters can run
+     *   in place without a second full-size copy.
      */
-    fun decodePage(context: Context, uri: Uri, maxDimension: Int = 2400): Bitmap? {
+    fun decodePage(
+        context: Context,
+        uri: Uri,
+        maxDimension: Int = 2400,
+        mutable: Boolean = false,
+    ): Bitmap? {
         return try {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -115,11 +148,15 @@ object PdfExporter {
                     val opts = BitmapFactory.Options().apply {
                         inSampleSize = sample
                         inPreferredConfig = Bitmap.Config.ARGB_8888
+                        inMutable = mutable
                     }
                     BitmapFactory.decodeStream(stream2, null, opts)
                 }
             }
         } catch (e: Exception) {
+            null
+        } catch (e: OutOfMemoryError) {
+            // Treated like an unreadable page rather than crashing the app.
             null
         }
     }

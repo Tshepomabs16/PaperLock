@@ -32,7 +32,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,13 +39,14 @@ import com.mabsSD.toolbox.ui.components.PrimaryButton
 import com.mabsSD.toolbox.ui.components.ToolboxTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -63,15 +63,30 @@ import com.mabsSD.toolbox.utils.PdfPageSpec
 import com.mabsSD.toolbox.utils.ScanFilter
 import com.mabsSD.toolbox.utils.WorkingFileManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * One scanned page. Only a small thumbnail is held in memory; the full page
+ * stays on disk at [uri] (the scanner's output file) and is decoded when it
+ * is actually needed — the on-screen preview of the selected page, or one at
+ * a time during export.
+ *
+ * This used to hold every page as a full-resolution bitmap (~16 MB each at
+ * 2400px), plus a full-size filtered copy per thumbnail: a 30-page scan asked
+ * for close to 1 GB, on a phone that also has Play services' scanner running.
+ */
 private data class ScanPage(
-    val original: Bitmap,
-    var rotation: Int = 0,
-    var filter: ScanFilter = ScanFilter.BINARY
+    val uri: Uri,
+    val thumb: Bitmap,
+    val rotation: Int = 0,
+    val filter: ScanFilter = ScanFilter.BINARY
 )
+
+private const val THUMB_MAX_PX = 360
+private const val PREVIEW_MAX_PX = 1400
+private const val EXPORT_MAX_PX = 2400
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +100,9 @@ fun ScanScreen(
     var pages by remember { mutableStateOf<List<ScanPage>>(emptyList()) }
     var selectedPageIndex by remember { mutableStateOf(0) }
     var exporting by remember { mutableStateOf(false) }
+    var exportStatus by remember { mutableStateOf("Writing PDF…") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     val scanner = remember {
         GmsDocumentScanning.getClient(
@@ -105,10 +122,15 @@ fun ScanScreen(
                 val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                 val pageUris: List<Uri> = scanResult?.pages?.map { it.imageUri } ?: emptyList()
                 if (pageUris.isNotEmpty()) {
-                    decodePages(context, pageUris) { decoded ->
-                        pages = decoded
-                        selectedPageIndex = 0
-                        errorMessage = null
+                    loadThumbnails(scope, context, pageUris) { added ->
+                        // Append: "Add pages" used to replace every page
+                        // already in the tray with the new scan.
+                        val firstNew = pages.size
+                        pages = pages + added
+                        selectedPageIndex = firstNew.coerceAtMost(pages.lastIndex.coerceAtLeast(0))
+                        errorMessage = if (added.size < pageUris.size) {
+                            "${pageUris.size - added.size} page(s) couldn't be read and were skipped."
+                        } else null
                     }
                 } else {
                     // Success with nothing attached. Happens when ML Kit's delegate
@@ -187,7 +209,7 @@ fun ScanScreen(
             ) {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(16.dp))
-                Text("Writing PDF…")
+                Text(exportStatus)
             }
             return@Scaffold
         }
@@ -210,18 +232,25 @@ fun ScanScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            Box(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
                 currentPage?.let { page ->
-                    val preview = remember(page, page.filter, page.rotation) {
-                        val filtered = ImageProcessor.apply(page.original, page.filter)
-                        rotateBitmap(filtered, page.rotation)
+                    val preview by produceState<ImageBitmap?>(null, page.uri, page.filter, page.rotation) {
+                        value = withContext(Dispatchers.Default) {
+                            renderPage(context, page.uri, page.filter, page.rotation, PREVIEW_MAX_PX)
+                                ?.asImageBitmap()
+                        }
                     }
-                    Image(
-                        bitmap = preview.asImageBitmap(),
-                        contentDescription = "Page ${selectedPageIndex + 1} preview",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    preview?.let {
+                        Image(
+                            bitmap = it,
+                            contentDescription = "Page ${selectedPageIndex + 1} preview",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } ?: CircularProgressIndicator()
                 }
             }
 
@@ -267,13 +296,20 @@ fun ScanScreen(
                 }
             }
 
+            errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            }
+
             Spacer(Modifier.height(12.dp))
 
             PrimaryButton(
                 text = if (pages.size == 1) "Export PDF (1 page)" else "Export PDF (${pages.size} pages)",
                 onClick = {
                     exporting = true
-                    doExport(context, pages) { result, error ->
+                    exportStatus = "Writing PDF…"
+                    errorMessage = null
+                    doExport(scope, context, pages, onStatus = { exportStatus = it }) { result, error ->
                         exporting = false
                         if (result != null) {
                             ResultStore.set(result, "scan")
@@ -304,15 +340,24 @@ private fun PageThumbnail(
         border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Column(modifier = modifier.padding(4.dp)) {
-            val preview = remember(page, page.filter) {
-                rotateBitmap(ImageProcessor.apply(page.original, page.filter), page.rotation)
+            // Filtered off the main thread from the small thumbnail only.
+            val preview by produceState<ImageBitmap?>(null, page.thumb, page.filter, page.rotation) {
+                value = withContext(Dispatchers.Default) {
+                    val copy = page.thumb.copy(Bitmap.Config.ARGB_8888, true)
+                    ImageProcessor.applyInPlace(copy, page.filter)
+                    rotateAndRecycle(copy, page.rotation).asImageBitmap()
+                }
             }
-            Image(
-                bitmap = preview.asImageBitmap(),
-                contentDescription = "Page ${index + 1}",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(width = 56.dp, height = 72.dp)
-            )
+            Box(modifier = Modifier.size(width = 56.dp, height = 72.dp), contentAlignment = Alignment.Center) {
+                preview?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = "Page ${index + 1}",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
             Text(
                 text = (index + 1).toString(),
                 style = MaterialTheme.typography.labelSmall,
@@ -349,57 +394,88 @@ private fun rotateSelected(
     }
 }
 
-private fun rotateBitmap(input: Bitmap, degrees: Int): Bitmap {
+/** Rotate [input] by [degrees], recycling it if a new bitmap was made. */
+private fun rotateAndRecycle(input: Bitmap, degrees: Int): Bitmap {
     if (degrees % 360 == 0) return input
     val matrix = android.graphics.Matrix().apply { postRotate(degrees.toFloat()) }
-    return Bitmap.createBitmap(input, 0, 0, input.width, input.height, matrix, true)
+    val rotated = Bitmap.createBitmap(input, 0, 0, input.width, input.height, matrix, true)
+    if (rotated !== input) input.recycle()
+    return rotated
 }
 
-private fun decodePages(
+/** Decode one page at [maxPx], filter it in place, rotate. Null if unreadable. */
+private fun renderPage(context: Context, uri: Uri, filter: ScanFilter, rotation: Int, maxPx: Int): Bitmap? {
+    val bitmap = PdfExporter.decodePage(context, uri, maxPx, mutable = true) ?: return null
+    return try {
+        ImageProcessor.applyInPlace(bitmap, filter)
+        rotateAndRecycle(bitmap, rotation)
+    } catch (e: OutOfMemoryError) {
+        bitmap.recycle()
+        null
+    }
+}
+
+private fun loadThumbnails(
+    scope: CoroutineScope,
     context: Context,
     uris: List<Uri>,
-    onDecoded: (List<ScanPage>) -> Unit
+    onLoaded: (List<ScanPage>) -> Unit
 ) {
-    kotlinx.coroutines.CoroutineScope(Dispatchers.Main + Job()).launch {
-        val decoded = withContext(Dispatchers.IO) {
+    scope.launch {
+        val loaded = withContext(Dispatchers.IO) {
             uris.mapNotNull { uri ->
-                PdfExporter.decodePage(context, uri)?.let { ScanPage(it) }
+                PdfExporter.decodePage(context, uri, THUMB_MAX_PX)?.let { ScanPage(uri = uri, thumb = it) }
             }
         }
-        onDecoded(decoded)
+        onLoaded(loaded)
     }
 }
 
 private fun doExport(
+    scope: CoroutineScope,
     context: Context,
     pages: List<ScanPage>,
+    onStatus: (String) -> Unit,
     onResult: (ToolResult?, String?) -> Unit
 ) {
-    kotlinx.coroutines.CoroutineScope(Dispatchers.Main + Job()).launch {
+    scope.launch {
+        var failure = "Could not write the PDF"
         val result = withContext(Dispatchers.IO) {
+            val workingFileManager = WorkingFileManager(context)
+            val outputUri = workingFileManager.createTempFile(prefix = "scan_", extension = "pdf")
             try {
-                val workingFileManager = WorkingFileManager(context)
-                val outputUri = workingFileManager.createTempFile(prefix = "scan_", extension = "pdf")
                 context.contentResolver.openOutputStream(outputUri)?.use { stream ->
-                    val specs = pages.map { page ->
-                        val bitmap = ImageProcessor.apply(page.original, page.filter)
+                    // One page decoded, filtered, encoded and freed at a time.
+                    PdfExporter.exportPages(pages.size, stream) { i ->
+                        onStatus("Writing page ${i + 1} of ${pages.size}…")
+                        val page = pages[i]
+                        val bitmap = PdfExporter.decodePage(context, page.uri, EXPORT_MAX_PX, mutable = true)
+                            ?: throw java.io.IOException("Page ${i + 1} couldn't be read.")
+                        ImageProcessor.applyInPlace(bitmap, page.filter)
                         PdfPageSpec(bitmap = bitmap, rotationDegrees = page.rotation)
                     }
-                    PdfExporter.exportToPdf(specs, stream)
-                    specs.forEach { it.bitmap.recycle() }
-                }
+                } ?: throw java.io.IOException("Couldn't create the output file.")
+
                 // Dated rather than a fixed "scan.pdf": every scan used to share
                 // one name, so History and Save-to filled up with identical
                 // entries the user couldn't tell apart.
                 val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH.mm", java.util.Locale.US)
                     .format(java.util.Date())
-                val name = "Scan $stamp.pdf"
-                val size = workingFileManager.getFileSize(outputUri)
-                ToolResult(outputUri = outputUri, outputName = name, outputSize = size)
+                ToolResult(
+                    outputUri = outputUri,
+                    outputName = "Scan $stamp.pdf",
+                    outputSize = workingFileManager.getFileSize(outputUri),
+                )
+            } catch (e: OutOfMemoryError) {
+                workingFileManager.deleteFile(outputUri)
+                failure = "The phone ran out of memory writing this PDF. Try exporting fewer pages at once."
+                null
             } catch (e: Exception) {
+                workingFileManager.deleteFile(outputUri)
+                failure = e.message ?: failure
                 null
             }
         }
-        if (result != null) onResult(result, null) else onResult(null, "Could not write the PDF")
+        if (result != null) onResult(result, null) else onResult(null, failure)
     }
 }
