@@ -1,8 +1,6 @@
 package com.mabsSD.toolbox.ui.screens
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,21 +40,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mabsSD.toolbox.tools.ResultStore
 import com.mabsSD.toolbox.tools.ToolResult
+import com.mabsSD.toolbox.ui.SaveAs
+import com.mabsSD.toolbox.ui.mimeTypeFor
+import com.mabsSD.toolbox.ui.openResult
+import com.mabsSD.toolbox.ui.shareResult
+import com.mabsSD.toolbox.ui.toolboxContainer
 import com.mabsSD.toolbox.utils.formatFileSize
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-
-private fun mimeTypeFor(fileName: String): String = when {
-    fileName.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
-    fileName.endsWith(".png", ignoreCase = true) -> "image/png"
-    fileName.endsWith(".jpg") || fileName.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
-    fileName.endsWith(".webp", ignoreCase = true) -> "image/webp"
-    fileName.endsWith(".txt", ignoreCase = true) -> "text/plain"
-    else -> "application/octet-stream"
-}
 
 private fun isImageFile(fileName: String): Boolean = when {
     fileName.endsWith(".png", ignoreCase = true) -> true
@@ -80,8 +73,12 @@ fun ResultScreen(
     var textContent by remember { mutableStateOf<String?>(null) }
     var savedToast by remember { mutableStateOf(false) }
     var copiedToast by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
+    val fileExists = remember(result?.outputUri) {
+        result?.let { context.toolboxContainer().workingFileManager.exists(it.outputUri) } ?: false
+    }
 
     LaunchedEffect(result?.outputUri) {
         preview = null
@@ -103,9 +100,7 @@ fun ResultScreen(
         }
     }
 
-    val saveLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/octet-stream")
-    ) { targetUri ->
+    val saveLauncher = rememberLauncherForActivityResult(SaveAs()) { targetUri ->
         if (targetUri != null && result != null) {
             val source = result.outputUri
             coroutineScope.launch {
@@ -212,12 +207,26 @@ fun ResultScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
+            if (!fileExists) {
+                Text(
+                    "This file is no longer on your device. It may have been deleted.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             // Save is the primary action and gets the full width. Three equal
             // buttons in one row could not fit their labels and truncated to
             // "Shar e" / "Ope n" on a 393dp screen.
             PrimaryButton(
                 text = "Save to…",
-                onClick = { saveLauncher.launch(result.outputName) },
+                onClick = {
+                    saveLauncher.launch(
+                        SaveAs.Request(result.outputName, mimeTypeFor(result.outputName))
+                    )
+                },
+                enabled = fileExists,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -230,29 +239,29 @@ fun ResultScreen(
                 SecondaryButton(
                     text = "Share",
                     onClick = {
-                        val share = Intent(Intent.ACTION_SEND).apply {
-                            type = mimeTypeFor(result.outputName)
-                            putExtra(Intent.EXTRA_STREAM, result.outputUri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(Intent.createChooser(share, "Share ${result.outputName}"))
+                        actionError = null
+                        shareResult(context, result.outputUri, result.outputName)
                     },
+                    enabled = fileExists,
                     modifier = Modifier.weight(1f)
                 )
                 SecondaryButton(
                     text = "Open",
                     onClick = {
-                        val open = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(result.outputUri, mimeTypeFor(result.outputName))
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        runCatching {
-                            context.startActivity(open)
-                            Unit
+                        actionError = if (openResult(context, result.outputUri, result.outputName)) {
+                            null
+                        } else {
+                            "No app on this phone can open this kind of file."
                         }
                     },
+                    enabled = fileExists,
                     modifier = Modifier.weight(1f)
                 )
+            }
+
+            actionError?.let {
+                Spacer(Modifier.height(12.dp))
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
             }
 
             if (savedToast) {

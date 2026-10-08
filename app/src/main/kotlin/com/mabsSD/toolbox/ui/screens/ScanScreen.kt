@@ -270,7 +270,7 @@ fun ScanScreen(
             Spacer(Modifier.height(12.dp))
 
             PrimaryButton(
-                text = "Export PDF (${pages.size} pages)",
+                text = if (pages.size == 1) "Export PDF (1 page)" else "Export PDF (${pages.size} pages)",
                 onClick = {
                     exporting = true
                     doExport(context, pages) { result, error ->
@@ -388,7 +388,12 @@ private fun doExport(
                     PdfExporter.exportToPdf(specs, stream)
                     specs.forEach { it.bitmap.recycle() }
                 }
-                val name = workingFileManager.getFileName(outputUri) ?: "scan.pdf"
+                // Dated rather than a fixed "scan.pdf": every scan used to share
+                // one name, so History and Save-to filled up with identical
+                // entries the user couldn't tell apart.
+                val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH.mm", java.util.Locale.US)
+                    .format(java.util.Date())
+                val name = "Scan $stamp.pdf"
                 val size = workingFileManager.getFileSize(outputUri)
                 ToolResult(outputUri = outputUri, outputName = name, outputSize = size)
             } catch (e: Exception) {

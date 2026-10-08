@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What FileProvider may serve to other apps: tool results, and nothing else.
+     Each grant is per-URI and temporary, issued only when the user taps Share
+     or Open. -->
+<paths>
+    <files-path name="outputs" path="outputs/" />
+</paths>

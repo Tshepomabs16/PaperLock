@@ -1,6 +1,6 @@
 # Toolbox Privacy Policy
 
-_Last updated: 2026-09-16_
+_Last updated: 2026-10-08_
 
 Toolbox is a document utility that works entirely on your device.
 
@@ -9,8 +9,8 @@ Toolbox is a document utility that works entirely on your device.
 - Toolbox has no `INTERNET` permission. It cannot send your files anywhere,
   because it has no way to reach a network at all. This is enforced by the
   Android operating system itself, not by a setting you have to trust.
-- All scanning, splitting, merging, compressing, and text recognition happens
-  on your device, using models bundled inside the app.
+- Splitting, merging, compressing, and text recognition happen on your
+  device. The text-recognition model is bundled inside the app.
 - Toolbox does not have an account system, a login, or a cloud service of any
   kind to send data to even if it wanted to.
 
@@ -24,23 +24,23 @@ anything you have not explicitly selected.
 
 Toolbox keeps a local, on-device history of files you have processed (name,
 size, and when it was created) so you can find them again from the Files tab.
-This history never leaves your device and is deleted if you clear it or
-uninstall the app.
+This history never leaves your device. You can delete any entry, and its file,
+from the Files tab; everything is removed if you uninstall the app.
 
 ## What Toolbox does not do
 
 - Toolbox does not collect analytics, crash reports, or usage data.
 - Toolbox does not use advertising or advertising identifiers.
 - Toolbox does not require an account, and has nowhere to send one if it did.
-- Toolbox does not access your contacts, location, microphone, or any
-  permission beyond the camera (for scanning) and the files you explicitly
-  select.
+- Toolbox does not request camera, contacts, location, microphone, or storage
+  permissions. It reads only the files you explicitly select.
 
-## Camera permission
+## Scanning
 
-Toolbox requests camera access only to let you photograph documents for the
-Scan feature. Photos are processed on-device and are never transmitted
-anywhere.
+Toolbox does not request camera permission itself. The Scan feature uses the
+document scanner provided by Google Play services on your device, which shows
+its own camera screen and returns only the pages you capture to Toolbox.
+Toolbox then processes those pages on your device.
 
 ## Changes to this policy
 

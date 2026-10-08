@@ -38,25 +38,65 @@ class CompressTool(
         onProgress: (ToolProgress) -> Unit,
     ): ToolResult {
         val input = inputs.firstOrNull() ?: throw PdfError.Damaged()
-        val targetBytes = params[PARAM_TARGET_BYTES] as? Long
+        val requestedTarget = params[PARAM_TARGET_BYTES] as? Long
             ?: throw IllegalArgumentException("No target size given")
 
-        return when (input.type) {
-            ToolInputType.PDF -> compressPdf(input, targetBytes, onProgress)
-            ToolInputType.IMAGE -> compressImage(input, targetBytes, onProgress)
+        // The original's own size is a ceiling as well as the user's target.
+        // Without this, a 33 KB PNG "compressed" to a 1 MB target came back as
+        // a 49 KB JPEG: max quality fitted the target, so the search stopped
+        // there, and the tool handed back a bigger file than it was given.
+        val sourceSize = workingFileManager.getFileSize(input.uri)
+        val targetBytes = if (sourceSize > 0) minOf(requestedTarget, sourceSize - 1) else requestedTarget
+
+        val result = when (input.type) {
+            ToolInputType.PDF -> compressPdf(input, targetBytes, requestedTarget, onProgress)
+            ToolInputType.IMAGE -> compressImage(input, targetBytes, requestedTarget, onProgress)
             ToolInputType.ANY -> throw IllegalArgumentException("Compress needs a PDF or image, not ANY")
         }
+
+        if (sourceSize > 0 && result.outputSize >= sourceSize) {
+            return keepOriginal(input, sourceSize, result)
+        }
+        if (sourceSize > 0 && result.note == null) {
+            val saved = ((sourceSize - result.outputSize) * 100 / sourceSize).toInt()
+            return result.copy(
+                note = "$saved% smaller — ${formatFileSize(sourceSize)} → ${formatFileSize(result.outputSize)}"
+            )
+        }
+        return result
+    }
+
+    /**
+     * Nothing beat the original, so return the original untouched rather than a
+     * larger or lower-quality copy of it.
+     */
+    private fun keepOriginal(input: ToolInput, sourceSize: Long, attempt: ToolResult): ToolResult {
+        workingFileManager.deleteFile(attempt.outputUri)
+        val name = workingFileManager.getFileName(input.uri) ?: "document"
+        val extension = name.substringAfterLast('.', "bin")
+        val outputUri = workingFileManager.createTempFile(prefix = "compressed_", extension = extension)
+        context.contentResolver.openInputStream(input.uri)?.use { src ->
+            context.contentResolver.openOutputStream(outputUri)?.use { dst -> src.copyTo(dst) }
+        } ?: throw PdfError.Damaged()
+        return ToolResult(
+            outputUri = outputUri,
+            outputName = name,
+            outputSize = workingFileManager.getFileSize(outputUri),
+            note = "This file is already smaller than anything Toolbox could make without " +
+                "losing quality, so it was kept as it is (${formatFileSize(sourceSize)}).",
+        )
     }
 
     private fun compressPdf(
         input: ToolInput,
         targetBytes: Long,
+        requestedTarget: Long,
         onProgress: (ToolProgress) -> Unit,
     ): ToolResult {
         val source = context.contentResolver.openInputStream(input.uri) ?: throw PdfError.Damaged()
         val outputUri = workingFileManager.createTempFile(prefix = "compressed_", extension = "pdf")
 
-        val outcome = context.contentResolver.openOutputStream(outputUri)?.use { out ->
+        context.contentResolver.openOutputStream(outputUri)?.use { out ->
             PdfCompressor.compress(source, out, targetBytes) { progress, message ->
                 onProgress(ToolProgress.Running(progress, message))
             }
@@ -70,13 +110,14 @@ class CompressTool(
             outputUri = outputUri,
             outputName = outputName(input, "pdf"),
             outputSize = finalSize,
-            note = missedTargetNote(outcome.hitTarget, targetBytes),
+            note = missedTargetNote(finalSize <= requestedTarget, requestedTarget),
         )
     }
 
     private fun compressImage(
         input: ToolInput,
         targetBytes: Long,
+        requestedTarget: Long,
         onProgress: (ToolProgress) -> Unit,
     ): ToolResult {
         onProgress(ToolProgress.Running(0.05f, "Reading image..."))
@@ -104,7 +145,7 @@ class CompressTool(
             outputUri = outputUri,
             outputName = outputName(input, "jpg"),
             outputSize = finalSize,
-            note = missedTargetNote(outcome.hitTarget, targetBytes),
+            note = missedTargetNote(finalSize <= requestedTarget, requestedTarget),
         )
     }
 

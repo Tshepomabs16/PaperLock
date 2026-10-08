@@ -28,6 +28,16 @@ private val LightColors = lightColorScheme(
     onSurface = TextPrimary,
     surfaceVariant = PaperSurfaceVariant,
     onSurfaceVariant = TextSecondary,
+    // The surfaceContainer family is what NavigationBar, menus and sheets
+    // paint with. Left unset, Material falls back to its own purple-tinted
+    // baseline, which is where the lavender bottom bar came from.
+    surfaceContainerLowest = PaperSurface,
+    surfaceContainerLow = PaperSurface,
+    surfaceContainer = PaperSurface,
+    surfaceContainerHigh = PaperSurfaceVariant,
+    surfaceContainerHighest = PaperSurfaceVariant,
+    surfaceBright = PaperSurface,
+    surfaceDim = PaperSurfaceVariant,
 
     error = Danger,
     onError = PaperSurface,
@@ -60,6 +70,13 @@ private val DarkColors = darkColorScheme(
     onSurface = TextPrimaryDark,
     surfaceVariant = InkSurfaceVariant,
     onSurfaceVariant = TextSecondaryDark,
+    surfaceContainerLowest = InkBackground,
+    surfaceContainerLow = InkSurface,
+    surfaceContainer = InkSurface,
+    surfaceContainerHigh = InkSurfaceVariant,
+    surfaceContainerHighest = InkSurfaceVariant,
+    surfaceBright = InkSurfaceVariant,
+    surfaceDim = InkBackground,
 
     error = DangerDark,
     onError = OnIndigoLight,

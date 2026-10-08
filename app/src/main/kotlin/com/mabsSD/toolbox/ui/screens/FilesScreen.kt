@@ -26,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +36,12 @@ import com.mabsSD.toolbox.history.HistoryEntry
 import com.mabsSD.toolbox.tools.ResultStore
 import com.mabsSD.toolbox.tools.ToolResult
 import com.mabsSD.toolbox.ui.components.FileHistoryCard
+import com.mabsSD.toolbox.ui.components.toolTitle
+import com.mabsSD.toolbox.ui.shareResult
 import com.mabsSD.toolbox.ui.toolboxContainer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private enum class SortOrder { DATE, NAME, SIZE }
 
@@ -52,10 +58,16 @@ fun FilesScreen(
 
     var query by remember { mutableStateOf("") }
     var sortOrder by remember { mutableStateOf(SortOrder.DATE) }
+    var pendingDelete by remember { mutableStateOf<HistoryEntry?>(null) }
+    val scope = rememberCoroutineScope()
 
     val visible = remember(allEntries, query, sortOrder) {
         allEntries
-            .filter { query.isBlank() || it.outputName.contains(query, ignoreCase = true) }
+            .filter {
+                query.isBlank() ||
+                    it.outputName.contains(query, ignoreCase = true) ||
+                    toolTitle(it.toolId).contains(query, ignoreCase = true)
+            }
             .let { list ->
                 when (sortOrder) {
                     SortOrder.DATE -> list.sortedByDescending { it.createdAtMillis }
@@ -108,11 +120,35 @@ fun FilesScreen(
                     FileHistoryCard(
                         entry = entry,
                         onClick = { openHistoryEntry(entry, onOpenResult) },
+                        onShare = { shareResult(context, Uri.parse(entry.outputUri), entry.outputName) },
+                        onDelete = { pendingDelete = entry },
                     )
                     Spacer(Modifier.height(8.dp))
                 }
             }
         }
+    }
+
+    pendingDelete?.let { entry ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete this file?") },
+            text = { Text("\"${entry.outputName}\" will be removed from this device. This can't be undone.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    pendingDelete = null
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            container.workingFileManager.deleteFile(Uri.parse(entry.outputUri))
+                            container.historyDb.historyDao().delete(entry)
+                        }
+                    }
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
+            },
+        )
     }
 }
 

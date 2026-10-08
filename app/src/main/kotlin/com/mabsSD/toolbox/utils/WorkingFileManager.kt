@@ -3,27 +3,45 @@ package com.mabsSD.toolbox.utils
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import java.io.File
 
+/**
+ * Owns where the app's files live.
+ *
+ * Two places, deliberately separate:
+ *  - [outputsDir] (`filesDir/outputs`) holds every tool result. History rows
+ *    point at these, so they are never swept automatically — they leave only
+ *    when the user deletes them from Files.
+ *  - `cacheDir` is scratch space. Anything there older than a day is swept on
+ *    launch. Results used to live here too, which meant the Files tab filled
+ *    up with entries whose files had been silently deleted a day later.
+ */
 class WorkingFileManager(private val context: Context) {
 
     private val cacheDir: File
         get() = context.cacheDir
 
+    val outputsDir: File
+        get() = File(context.filesDir, OUTPUTS_DIR).apply { mkdirs() }
+
     fun init() {
         cacheDir.mkdirs()
+        outputsDir.mkdirs()
         cleanupOrphanedFiles()
     }
 
+    /** A new, uniquely named file for a tool result. */
     fun createTempFile(prefix: String = "toolbox_", extension: String = ""): Uri {
         val file = File.createTempFile(
             prefix,
             if (extension.isNotEmpty()) ".$extension" else null,
-            cacheDir
+            outputsDir
         )
         return Uri.fromFile(file)
     }
 
+    /** Sweeps scratch files only; results in [outputsDir] are never touched. */
     fun cleanupOrphanedFiles() {
         cacheDir.listFiles()?.forEach { file ->
             if (file.isFile && isOrphaned(file)) {
@@ -39,15 +57,35 @@ class WorkingFileManager(private val context: Context) {
     }
 
     fun deleteFile(uri: Uri): Boolean {
+        if (uri.scheme != "file") return false
         return try {
-            val file = File(uri.path!!)
-            file.delete()
+            File(uri.path!!).delete()
         } catch (e: Exception) {
             false
         }
     }
 
+    /** True if the result still exists on disk. Content URIs are assumed present. */
+    fun exists(uri: Uri): Boolean =
+        uri.scheme != "file" || uri.path?.let { File(it).exists() } == true
+
+    /**
+     * A URI another app is allowed to read.
+     *
+     * Results are addressed internally as file:// paths in app-private
+     * storage. Handing one of those to another app throws
+     * FileUriExposedException on Android 7+, which is what crashed Share and
+     * Open. FileProvider serves the same file as a content:// URI that the
+     * receiving app can read once granted.
+     */
+    fun shareableUri(uri: Uri): Uri {
+        if (uri.scheme != "file") return uri
+        val file = File(uri.path ?: return uri)
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
+
     fun getFileName(uri: Uri): String? {
+        if (uri.scheme == "file") return uri.lastPathSegment
         val cursor = context.contentResolver.query(uri, null, null, null, null)
         return cursor?.use {
             if (it.moveToFirst()) {
@@ -77,5 +115,9 @@ class WorkingFileManager(private val context: Context) {
                 if (sizeIndex >= 0) it.getLong(sizeIndex) else 0L
             } else 0L
         } ?: 0L
+    }
+
+    companion object {
+        const val OUTPUTS_DIR = "outputs"
     }
 }

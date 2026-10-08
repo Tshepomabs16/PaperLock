@@ -32,13 +32,13 @@ import com.mabsSD.toolbox.ui.toolboxContainer
 import kotlinx.coroutines.launch
 
 private const val PRIVACY_SUMMARY = "Toolbox has no INTERNET permission — it has no way to send " +
-    "your files anywhere. Scanning, splitting, merging, compressing, and text recognition all " +
-    "run on this device using models bundled inside the app. There is no account and no cloud " +
-    "service to send data to even if the app wanted to.\n\n" +
+    "your files anywhere. Splitting, merging, compressing, and text recognition all run on " +
+    "this device; the text-recognition model is bundled inside the app. There is no account " +
+    "and no cloud service to send data to even if the app wanted to.\n\n" +
+    "Toolbox doesn't request camera permission. The scanning camera is the system document " +
+    "scanner from Google Play services, which hands back only the pages you capture.\n\n" +
     "Toolbox keeps a local, on-device history of files you've processed so you can find them " +
-    "again from the Files tab. That history never leaves your device.\n\n" +
-    "The camera permission is used only for the Scan feature; photos are processed on-device " +
-    "and are never transmitted anywhere."
+    "again from the Files tab. Delete any of them from there at any time."
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
