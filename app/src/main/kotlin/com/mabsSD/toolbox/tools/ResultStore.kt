@@ -3,6 +3,7 @@ package com.mabsSD.toolbox.tools
 import android.net.Uri
 import com.mabsSD.toolbox.history.HistoryDao
 import com.mabsSD.toolbox.history.HistoryEntry
+import com.mabsSD.toolbox.utils.WorkingFileManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,29 +21,37 @@ object ResultStore {
         private set
 
     private var historyDao: HistoryDao? = null
+    private var files: WorkingFileManager? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /** Called once from ToolboxApplication after the database is built. */
-    fun attachHistory(dao: HistoryDao) {
+    fun attach(dao: HistoryDao, workingFileManager: WorkingFileManager) {
         historyDao = dao
+        files = workingFileManager
     }
 
-    /** A genuinely new result: updates the pointer and records history. */
-    fun set(result: ToolResult, toolId: String) {
-        lastResult = result
+    /**
+     * A genuinely new result: renames it on disk to its display name, updates
+     * the pointer and records history. Returns the result as published.
+     */
+    fun set(result: ToolResult, toolId: String): ToolResult {
+        val published = files?.let { result.copy(outputUri = it.publish(result.outputUri, result.outputName)) }
+            ?: result
+        lastResult = published
         historyDao?.let { dao ->
             scope.launch {
                 dao.insert(
                     HistoryEntry(
                         toolId = toolId,
-                        outputUri = result.outputUri.toString(),
-                        outputName = result.outputName,
-                        outputSize = result.outputSize,
+                        outputUri = published.outputUri.toString(),
+                        outputName = published.outputName,
+                        outputSize = published.outputSize,
                         createdAtMillis = System.currentTimeMillis(),
                     )
                 )
             }
         }
+        return published
     }
 
     /**

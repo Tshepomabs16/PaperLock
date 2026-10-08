@@ -45,7 +45,7 @@ class ToolboxApplication : Application() {
         PDFBoxResourceLoader.init(applicationContext)
         container = AppContainer(this)
         container.workingFileManager.init()
-        ResultStore.attachHistory(container.historyDb.historyDao())
+        ResultStore.attach(container.historyDb.historyDao(), container.workingFileManager)
 
         // Registering a tool is what makes its Home tile tappable, so this list
         // is the single source of truth for what the app can actually do.

@@ -56,10 +56,39 @@ class WorkingFileManager(private val context: Context) {
         return age > maxAge
     }
 
+    /**
+     * Give a finished result its human-readable name on disk.
+     *
+     * Tools write to unique temp names ("split_8246192174306986223.pdf") so
+     * concurrent runs can't collide. But that on-disk name is what other apps
+     * see when the file is shared — a WhatsApp recipient got the number, not
+     * "statement_p2-4.pdf". Each result moves into its own folder under its
+     * display name, so names stay readable and still never collide.
+     */
+    fun publish(uri: Uri, displayName: String): Uri {
+        if (uri.scheme != "file") return uri
+        val src = File(uri.path ?: return uri)
+        if (!src.exists()) return uri
+        val safeName = displayName
+            .replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), "_")
+            .trim()
+            .ifEmpty { src.name }
+        val dir = File(outputsDir, src.nameWithoutExtension).apply { mkdirs() }
+        val dest = File(dir, safeName)
+        return if (src.renameTo(dest)) Uri.fromFile(dest) else uri
+    }
+
     fun deleteFile(uri: Uri): Boolean {
         if (uri.scheme != "file") return false
         return try {
-            File(uri.path!!).delete()
+            val file = File(uri.path!!)
+            val deleted = file.delete()
+            // Published results sit in a per-result folder; drop it once empty.
+            val parent = file.parentFile
+            if (parent != null && parent != outputsDir && parent.parentFile == outputsDir) {
+                parent.delete()
+            }
+            deleted
         } catch (e: Exception) {
             false
         }

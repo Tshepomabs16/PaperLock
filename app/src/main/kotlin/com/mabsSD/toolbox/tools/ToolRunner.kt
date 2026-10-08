@@ -30,8 +30,8 @@ class ToolRunner {
                 val result = tool.run(inputs, params) { progress ->
                     _state.value = progress
                 }
-                ResultStore.set(result, tool.id)
-                _state.value = ToolProgress.Complete(result)
+                val published = ResultStore.set(result, tool.id)
+                _state.value = ToolProgress.Complete(published)
             } catch (e: CancellationException) {
                 _state.value = ToolProgress.Idle
                 throw e
