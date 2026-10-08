@@ -9,11 +9,15 @@ import androidx.compose.ui.unit.sp
 import com.mabsSD.toolbox.R
 
 /**
- * Plus Jakarta Sans, bundled in res/font rather than pulled from Google Fonts.
+ * Plus Jakarta Sans, bundled in res/font.
  *
- * The downloadable-fonts provider needs Play services and a network round trip,
- * which this app cannot make. Bundling costs ~645 KB and keeps the type identical
- * offline, on first launch, and on a de-Googled device.
+ * The design brief specifies Inter with a documented fallback of "Roboto /
+ * system sans-serif". Inter itself could not be fetched (network unreachable
+ * while building this), so rather than dropping to bare system Roboto, this
+ * keeps Plus Jakarta Sans: a bundled, licence-clear, offline-guaranteed
+ * grotesque sans in the same visual family as Inter (similar x-height and
+ * proportions). Swap-in-place if Inter becomes available later — nothing else
+ * in the type system depends on which family this points to.
  */
 val JakartaSans = FontFamily(
     Font(R.font.plus_jakarta_sans_regular, FontWeight.Normal),
@@ -23,108 +27,86 @@ val JakartaSans = FontFamily(
     Font(R.font.plus_jakarta_sans_extrabold, FontWeight.ExtraBold),
 )
 
-/**
- * Two registers, deliberately far apart.
- *
- * Display type is huge, ExtraBold and tracked tight to -2sp; labels are small,
- * uppercase and tracked wide to +1.5sp. The gap between them is what carries the
- * hierarchy, so mid-weight filler sizes are kept to a minimum.
- */
+/** Sizes and weights follow the design brief's type scale directly. */
 val ToolboxTypography = Typography(
-    displayLarge = TextStyle(
+    displayLarge = TextStyle( // Display: splash / onboarding headlines
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 56.sp,
-        lineHeight = 54.sp,
-        letterSpacing = (-2.4).sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
     ),
-    displayMedium = TextStyle(
+    headlineLarge = TextStyle( // H1: screen titles
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 44.sp,
-        lineHeight = 44.sp,
-        letterSpacing = (-1.8).sp,
-    ),
-    displaySmall = TextStyle(
-        fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 34.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-1.2).sp,
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
-        lineHeight = 30.sp,
-        letterSpacing = (-1).sp,
+        lineHeight = 36.sp,
+    ),
+    headlineMedium = TextStyle( // H2: section headers
+        fontFamily = JakartaSans,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
     ),
     headlineSmall = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
-        lineHeight = 26.sp,
-        letterSpacing = (-0.6).sp,
+        lineHeight = 28.sp,
     ),
-    titleLarge = TextStyle(
+    titleLarge = TextStyle( // H3: card titles
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
-        lineHeight = 24.sp,
-        letterSpacing = (-0.5).sp,
+        lineHeight = 28.sp,
     ),
     titleMedium = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 17.sp,
-        lineHeight = 21.sp,
-        letterSpacing = (-0.3).sp,
+        lineHeight = 22.sp,
     ),
     titleSmall = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 15.sp,
-        lineHeight = 19.sp,
+        lineHeight = 20.sp,
     ),
-    bodyLarge = TextStyle(
+    bodyLarge = TextStyle( // Primary body text
         fontFamily = JakartaSans,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
     ),
-    bodyMedium = TextStyle(
+    bodyMedium = TextStyle( // Descriptions, metadata
         fontFamily = JakartaSans,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
-        lineHeight = 21.sp,
+        lineHeight = 20.sp,
     ),
     bodySmall = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
         lineHeight = 18.sp,
     ),
-    // Uppercase micro-labels. Wide tracking is what stops small caps reading as
-    // cramped; these are always paired with .uppercase() at the call site.
-    labelLarge = TextStyle(
+    labelLarge = TextStyle( // Buttons, chips, tabs
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 1.2.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
-        fontSize = 11.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 1.5.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.2.sp,
     ),
-    labelSmall = TextStyle(
+    labelSmall = TextStyle( // Fine print, timestamps
         fontFamily = JakartaSans,
-        fontWeight = FontWeight.Bold,
-        fontSize = 10.sp,
-        lineHeight = 13.sp,
-        letterSpacing = 1.6.sp,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
     ),
 )

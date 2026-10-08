@@ -5,21 +5,27 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 /**
- * Square corners throughout.
- *
- * Rounded cards read as friendly and generic; hard edges are what make an
- * oversized-type layout look deliberate rather than unfinished. The only
- * concession is 2dp on the smallest chips, which stops them looking like a
- * rendering error at that size.
+ * Rounded corner scale, replacing the earlier stark-square Brutalist system.
+ * Values match the design brief's radius tokens.
  */
+val RadiusXs = 6.dp
+val RadiusSm = 10.dp
+val RadiusMd = 14.dp
+val RadiusLg = 20.dp
+val RadiusXl = 28.dp
+val RadiusFull = 999.dp
+
 val ToolboxShapes = Shapes(
-    extraSmall = RoundedCornerShape(2.dp),
-    small = RoundedCornerShape(0.dp),
-    medium = RoundedCornerShape(0.dp),
-    large = RoundedCornerShape(0.dp),
-    extraLarge = RoundedCornerShape(0.dp),
+    extraSmall = RoundedCornerShape(RadiusXs),
+    small = RoundedCornerShape(RadiusSm),
+    medium = RoundedCornerShape(RadiusMd),
+    large = RoundedCornerShape(RadiusLg),
+    extraLarge = RoundedCornerShape(RadiusXl),
 )
 
-/** Border weight for the bordered-block language used across every surface. */
-val BorderWidth = 2.dp
+/**
+ * Dark mode favours a visible hairline over elevation shadows, which barely
+ * read against a near-black background. Light mode uses Card's own tonal
+ * elevation instead of a border.
+ */
 val BorderWidthThin = 1.dp

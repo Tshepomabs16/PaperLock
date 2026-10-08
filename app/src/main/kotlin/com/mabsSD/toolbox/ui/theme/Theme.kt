@@ -7,78 +7,86 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val LightColors = lightColorScheme(
-    primary = Signal,
-    onPrimary = Paper,
-    primaryContainer = Signal,
-    onPrimaryContainer = Paper,
+    primary = Indigo,
+    onPrimary = OnIndigo,
+    primaryContainer = IndigoContainer,
+    onPrimaryContainer = OnIndigoContainer,
 
-    secondary = Ink,
-    onSecondary = Paper,
-    secondaryContainer = Bone,
-    onSecondaryContainer = Ink,
+    secondary = Teal,
+    onSecondary = PaperSurface,
+    secondaryContainer = TealContainer,
+    onSecondaryContainer = OnIndigoContainer,
 
-    tertiary = Ink,
-    onTertiary = Paper,
+    tertiary = Amber,
+    onTertiary = OnAmber,
+    tertiaryContainer = AmberContainer,
+    onTertiaryContainer = OnAmber,
 
-    background = Paper,
-    onBackground = Ink,
-    surface = Paper,
-    onSurface = Ink,
-    surfaceVariant = Bone,
-    onSurfaceVariant = Muted,
+    background = PaperBackground,
+    onBackground = TextPrimary,
+    surface = PaperSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = PaperSurfaceVariant,
+    onSurfaceVariant = TextSecondary,
 
     error = Danger,
-    onError = Paper,
-    errorContainer = Paper,
+    onError = PaperSurface,
+    errorContainer = DangerContainer,
     onErrorContainer = Danger,
 
-    outline = Ink,
-    outlineVariant = Faint,
+    outline = Border,
+    outlineVariant = Border,
 )
 
 private val DarkColors = darkColorScheme(
-    primary = SignalDark,
-    onPrimary = InkDark,
-    primaryContainer = SignalDark,
-    onPrimaryContainer = InkDark,
+    primary = IndigoLight,
+    onPrimary = OnIndigoLight,
+    primaryContainer = IndigoContainerDark,
+    onPrimaryContainer = OnIndigoContainerDark,
 
-    secondary = Chalk,
-    onSecondary = InkDark,
-    secondaryContainer = SurfaceDark,
-    onSecondaryContainer = Chalk,
+    secondary = TealLight,
+    onSecondary = OnIndigoLight,
+    secondaryContainer = TealContainerDark,
+    onSecondaryContainer = OnIndigoContainerDark,
 
-    tertiary = Chalk,
-    onTertiary = InkDark,
+    tertiary = AmberLight,
+    onTertiary = OnIndigoLight,
+    tertiaryContainer = InkSurfaceVariant,
+    onTertiaryContainer = AmberLight,
 
-    background = InkDark,
-    onBackground = Chalk,
-    surface = InkDark,
-    onSurface = Chalk,
-    surfaceVariant = SurfaceDark,
-    onSurfaceVariant = MutedDark,
+    background = InkBackground,
+    onBackground = TextPrimaryDark,
+    surface = InkSurface,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = InkSurfaceVariant,
+    onSurfaceVariant = TextSecondaryDark,
 
     error = DangerDark,
-    onError = InkDark,
-    errorContainer = InkDark,
+    onError = OnIndigoLight,
+    errorContainer = InkSurfaceVariant,
     onErrorContainer = DangerDark,
 
-    outline = Chalk,
-    outlineVariant = FaintDark,
+    outline = BorderDark,
+    outlineVariant = BorderDark,
 )
 
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
 /**
- * Dynamic colour is off by default, deliberately.
- *
- * On Android 12+ it replaces the palette above with tones derived from the user's
- * wallpaper, which is why the app previously rendered as flat grey on a Samsung
- * with a monochrome wallpaper. A privacy tool should look the same on every
- * device: the identity is part of the trust claim, not a per-phone accident.
+ * Dynamic colour stays off. A privacy-focused tool should look the same on
+ * every device — the palette above is part of the trust claim, not something
+ * that should shift with the user's wallpaper.
  */
 @Composable
 fun ToolboxTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = ToolboxTypography,

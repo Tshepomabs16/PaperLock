@@ -35,33 +35,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mabsSD.toolbox.tools.ResultStore
 import com.mabsSD.toolbox.tools.ToolResult
+import com.mabsSD.toolbox.utils.formatFileSize
 import java.io.IOException
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-fun formatFileSize(bytes: Long): String {
-    if (bytes <= 0) return "0 B"
-    val units = arrayOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var unit = 0
-    while (value >= 1024 && unit < units.lastIndex) {
-        value /= 1024
-        unit++
-    }
-    return String.format(Locale.US, "%.1f %s", value, units[unit])
-}
 
 private fun mimeTypeFor(fileName: String): String = when {
     fileName.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
     fileName.endsWith(".png", ignoreCase = true) -> "image/png"
     fileName.endsWith(".jpg") || fileName.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
     fileName.endsWith(".webp", ignoreCase = true) -> "image/webp"
+    fileName.endsWith(".txt", ignoreCase = true) -> "text/plain"
     else -> "application/octet-stream"
 }
 
@@ -71,6 +64,8 @@ private fun isImageFile(fileName: String): Boolean = when {
     fileName.endsWith(".webp", ignoreCase = true) -> true
     else -> false
 }
+
+private fun isTextFile(fileName: String): Boolean = fileName.endsWith(".txt", ignoreCase = true)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,16 +77,28 @@ fun ResultScreen(
     val context = LocalContext.current
     val result: ToolResult? = remember(outputUriArg) { ResultStore.lastResult }
     var preview by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var textContent by remember { mutableStateOf<String?>(null) }
     var savedToast by remember { mutableStateOf(false) }
+    var copiedToast by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val clipboard = LocalClipboardManager.current
 
     LaunchedEffect(result?.outputUri) {
         preview = null
-        if (result != null && isImageFile(result.outputName)) {
+        textContent = null
+        if (result == null) return@LaunchedEffect
+
+        if (isImageFile(result.outputName)) {
             preview = withContext(Dispatchers.IO) {
                 context.contentResolver.openInputStream(result.outputUri)?.let { stream ->
                     android.graphics.BitmapFactory.decodeStream(stream)?.asImageBitmap()
                 }
+            }
+        } else if (isTextFile(result.outputName)) {
+            textContent = withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(result.outputUri)
+                    ?.bufferedReader()
+                    ?.use { it.readText() }
             }
         }
     }
@@ -115,7 +122,7 @@ fun ResultScreen(
                     }
                 }
                 if (savedToast) {
-                    ResultStore.set(result.copy(outputUri = targetUri))
+                    ResultStore.updateLastResult(result.copy(outputUri = targetUri))
                 }
             }
         }
@@ -156,6 +163,13 @@ fun ResultScreen(
                     text = result.outputName,
                     style = MaterialTheme.typography.headlineSmall,
                 )
+                result.note?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -170,6 +184,32 @@ fun ResultScreen(
                         .height(360.dp)
                 )
                 Spacer(Modifier.height(16.dp))
+            }
+
+            textContent?.let { text ->
+                BorderedBlock {
+                    // Capped rather than independently scrollable: a scroll
+                    // region nested inside this screen's own scroll would fight
+                    // it for gestures. Copy and Share still act on the full
+                    // text regardless of what is visually truncated here.
+                    Text(
+                        text = text.ifBlank { "(no text found)" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 14,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                SecondaryButton(
+                    text = if (copiedToast) "Copied" else "Copy text",
+                    onClick = {
+                        clipboard.setText(AnnotatedString(text))
+                        copiedToast = true
+                    },
+                    enabled = text.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
             }
 
             // Save is the primary action and gets the full width. Three equal

@@ -16,7 +16,13 @@ data class ToolInput(
 data class ToolResult(
     val outputUri: Uri,
     val outputName: String,
-    val outputSize: Long
+    val outputSize: Long,
+    /**
+     * Non-fatal detail worth showing next to the result, e.g. compression
+     * missing its target size but still shipping the closest usable file
+     * (P3-05). Null for the common case where the result speaks for itself.
+     */
+    val note: String? = null,
 )
 
 sealed class ToolProgress {

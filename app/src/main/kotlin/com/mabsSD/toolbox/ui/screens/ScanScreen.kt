@@ -269,14 +269,14 @@ fun ScanScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            OutlinedButton(
-                shape = RectangleShape,
+            PrimaryButton(
+                text = "Export PDF (${pages.size} pages)",
                 onClick = {
                     exporting = true
                     doExport(context, pages) { result, error ->
                         exporting = false
                         if (result != null) {
-                            ResultStore.set(result)
+                            ResultStore.set(result, "scan")
                             onNavigateToResult()
                         } else {
                             errorMessage = error ?: "Export failed"
@@ -284,9 +284,7 @@ fun ScanScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Export PDF (${pages.size} pages)")
-            }
+            )
         }
     }
 }

@@ -2,8 +2,6 @@ package com.mabsSD.toolbox.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,17 +24,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
-import com.mabsSD.toolbox.ui.theme.BorderWidth
+import com.mabsSD.toolbox.ui.theme.BorderWidthThin
 
 /**
- * Shared chrome for every screen below Home.
+ * Shared chrome for every screen below a top-level tab.
  *
- * Each screen used to build its own TopAppBar with containerColor hardcoded to
- * primaryContainer, so a single palette change repainted three headers at once
- * and made the back label vanish into the accent. One component, one place to
- * change it.
+ * One definition for the header, buttons and content block so a palette or
+ * shape change repaints everywhere at once instead of drifting between
+ * screens that each built their own copy.
  */
 @Composable
 fun ToolboxTopBar(
@@ -42,52 +41,35 @@ fun ToolboxTopBar(
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
+            .padding(start = 8.dp, end = 20.dp, top = 6.dp, bottom = 6.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, end = 20.dp, top = 6.dp, bottom = 12.dp)
-        ) {
-            if (onBack != null) {
-                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-                Spacer(Modifier.width(4.dp))
-            } else {
-                Spacer(Modifier.width(12.dp))
+        if (onBack != null) {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+            Spacer(Modifier.width(4.dp))
+        } else {
+            Spacer(Modifier.width(12.dp))
         }
-        Rule()
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }
 
-/** The heavy horizontal rule used to separate bands of content. */
-@Composable
-fun Rule(modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(BorderWidth)
-            .background(MaterialTheme.colorScheme.onBackground)
-    )
-}
-
-/** Small uppercase section marker, matching the masthead metadata line. */
+/** Small uppercase section marker used above a block of related content. */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -98,11 +80,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/**
- * Filled accent action. One per screen; everything else is a SecondaryButton.
- * Shape is passed explicitly because Material 3 buttons default to a fully
- * rounded shape rather than reading the theme's Shapes.
- */
+/** Filled primary action — one per screen; everything else is a SecondaryButton. */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -113,19 +91,18 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RectangleShape,
-        contentPadding = ButtonDefaults.ContentPadding,
+        shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ),
-        modifier = modifier.height(54.dp),
+        modifier = modifier.height(56.dp),
     ) {
-        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge)
+        Text(text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
-/** Outlined counterpart: same geometry, ink border, transparent fill. */
+/** Tonal secondary action, using the primary container rather than an outline. */
 @Composable
 fun SecondaryButton(
     text: String,
@@ -133,42 +110,52 @@ fun SecondaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val border = if (enabled) {
-        MaterialTheme.colorScheme.onBackground
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RectangleShape,
+        shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContainerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
-        modifier = modifier
-            .height(54.dp)
-            .border(BorderWidth, border, RectangleShape),
+        modifier = modifier.height(56.dp),
     ) {
-        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge)
+        Text(text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
-/** Bordered content block, the non-interactive sibling of the Home tool card. */
+/**
+ * Elevated content card in light mode; a thin hairline border in dark mode,
+ * where elevation shadows barely read against a near-black surface.
+ */
 @Composable
 fun BorderedBlock(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    // Derived from the resolved scheme rather than isSystemInDarkTheme(): with
+    // a manual theme override in Settings, the system setting and the app's
+    // actual active theme can disagree, and it's the latter that must decide
+    // whether this renders with elevation or a hairline border.
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Card(
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (dark) 0.dp else 1.dp),
         modifier = modifier
             .fillMaxWidth()
-            .border(BorderWidth, MaterialTheme.colorScheme.onBackground, RectangleShape)
-            .padding(16.dp)
+            .then(
+                if (dark) {
+                    Modifier.border(BorderWidthThin, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.large)
+                } else {
+                    Modifier
+                }
+            )
     ) {
-        content()
+        Column(modifier = Modifier.padding(16.dp)) {
+            content()
+        }
     }
 }

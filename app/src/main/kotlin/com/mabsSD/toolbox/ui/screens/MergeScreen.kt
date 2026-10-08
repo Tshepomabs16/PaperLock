@@ -3,6 +3,7 @@ package com.mabsSD.toolbox.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,7 +36,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,7 +47,7 @@ import com.mabsSD.toolbox.ui.components.PrimaryButton
 import com.mabsSD.toolbox.ui.components.SectionLabel
 import com.mabsSD.toolbox.ui.components.SecondaryButton
 import com.mabsSD.toolbox.ui.components.ToolboxTopBar
-import com.mabsSD.toolbox.ui.theme.BorderWidth
+import com.mabsSD.toolbox.ui.theme.BorderWidthThin
 import com.mabsSD.toolbox.ui.toolboxContainer
 
 private data class MergeEntry(val uri: Uri, val name: String)
@@ -202,7 +202,8 @@ private fun MergeRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .border(BorderWidth, MaterialTheme.colorScheme.onBackground, RectangleShape)
+            .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)
+            .border(BorderWidthThin, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
             .padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
     ) {
         Text(

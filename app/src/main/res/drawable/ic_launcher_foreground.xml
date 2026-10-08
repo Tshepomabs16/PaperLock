@@ -8,6 +8,10 @@
         android:fillColor="#FFFFFF"
         android:pathData="M41,34h26a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-26a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z" />
     <path
-        android:fillColor="#0061A4"
-        android:pathData="M45,45h18v3h-18zM45,52h18v3h-18zM45,59h12v3h-12z" />
+        android:fillColor="#3B5BDB"
+        android:pathData="M45,45h18v3h-18zM45,52h18v3h-18z" />
+    <!-- Amber accent line: the "scan" motion, echoing the splash concept. -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M45,59h12v3h-12z" />
 </vector>
