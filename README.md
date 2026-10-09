@@ -1,75 +1,124 @@
+<div align="center">
+
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="Toolbox icon" />
+
 # Toolbox
 
-An Android document utility that works entirely on your phone.
+**Scan, split, merge, compress and OCR documents — entirely on your phone.**
 
-**No account. No upload. No watermark. No ads.**
+No account. No upload. No ads. No watermark. No `INTERNET` permission.
 
-## The Hard Rule
+[![CI](https://github.com/Tshepomabs16/Toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/Tshepomabs16/Toolbox/actions/workflows/ci.yml)
+![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Nothing leaves the device.**
+<br />
 
-Every free scanner uploads your ID documents to somebody's server. Toolbox declares **no `INTERNET` permission at all**, and CI fails the build if the merged manifest ever contains one.
+<img src="docs/screenshots/home.png" width="200" alt="Home screen" />&nbsp;
+<img src="docs/screenshots/scan.png" width="200" alt="Scan review with black-and-white filter" />&nbsp;
+<img src="docs/screenshots/files.png" width="200" alt="Files history" />&nbsp;
+<img src="docs/screenshots/settings-dark.png" width="200" alt="Settings in dark mode" />
 
-- We physically cannot see your files
-- No analytics, no crash reporting, no remote config
-- Your documents stay on your device
+</div>
+
+---
+
+## Why
+
+Most free scanner and PDF apps upload your documents — IDs, payslips, contracts — to
+someone else's server to process them. Toolbox does all of the work on the device, and
+it is built so that it **can't** do otherwise: the shipped app has no network permission
+at all, and CI fails the build if one ever appears.
 
 ## Features
 
-### v1 (MVP)
-- **Scan to B&W PDF** — camera capture, edge crop, threshold filter, multi-page export
-- **Split & merge PDFs** — page ranges, extract, reorder, rotate, delete
-- **Compress to target size** — "under 2 MB", the thing every upload portal demands
-- **OCR** — copy text from images, create searchable PDFs (on-device)
-- **Share-sheet entry** — start from any other app
+| | Tool | What it does |
+|---|---|---|
+| 📷 | **Scan** | Capture pages with the system document scanner (edge detection and crop), or import photos. Choose Original, Grayscale or a crisp adaptive **B&W** filter, rotate and remove pages, then export a multi-page PDF. |
+| ✂️ | **Split** | Extract pages by range (e.g. `1-3, 7, 10-12`) into a new PDF. |
+| 🔗 | **Merge** | Combine several PDFs into one, in the order you choose. |
+| 🗜️ | **Compress** | Shrink a PDF or image to a target size — 1, 2 or 5 MB, or a custom limit — for upload portals with a size cap. Never returns a file bigger than the original. |
+| 🔤 | **OCR** | Recognise text in an image and copy it out. The recognition model is bundled in the app, so it works offline. |
+| 🗂️ | **Files** | Every result is kept in an on-device history you can search, sort, open, share, save anywhere or delete. |
 
-### Round 2
-- Video → audio extraction
-- Documents → PDF conversion
-- Sign and protect PDFs
-- QR scan and generate
-- Batch mode
+Also: light, dark and system themes; results keep sensible file names
+(`Scan 2026-10-08 16.24.pdf`, `report_p1-3.pdf`) when you share or save them.
 
-## Tech Stack
+## Privacy by construction
 
-- Kotlin
-- Jetpack Compose
-- Material 3
-- ML Kit Document Scanner
-- ML Kit Text Recognition v2 (bundled)
-- PdfBox-Android
-- WorkManager
+- **No `INTERNET` permission.** ML Kit and Play services pull it in transitively, so the
+  manifest strips it with `tools:node="remove"`.
+  [`scripts/check-no-internet.sh`](scripts/check-no-internet.sh) runs in CI and fails if
+  the strip directive is removed, if any merged manifest grants the permission, or if no
+  release manifest exists to check — a guardrail that can't fail would be worse than none.
+- **No camera permission.** Scanning uses the Google Play services document scanner,
+  which runs in its own process and hands back only the pages you capture.
+- **No analytics, crash reporting or remote config.** History lives in a local Room
+  database and backups are disabled.
+- Files are shared to other apps through a non-exported `FileProvider`, one URI grant at a time.
 
-## Development
+See [PRIVACY.md](PRIVACY.md) for the full policy.
 
-Requires **JDK 17–21**. AGP 8.7 rejects JDK 25 with a bare `What went wrong: 25.0.3`,
-which is easy to mistake for a corrupt build. Android Studio uses its own bundled JDK,
-so a build can succeed in the IDE and fail from the terminal on the same machine.
+## Built with
 
-```bash
-# Build (release included — the hard-rule check needs its merged manifest)
-./gradlew assembleDebug assembleRelease
+- **Kotlin** and **Jetpack Compose** with **Material 3**
+- **ML Kit** — Document Scanner and bundled Text Recognition v2
+- **PdfBox-Android** — split, merge and PDF compression
+- **Room** (history), **DataStore** (preferences), **Navigation Compose**
 
-# Run tests
-./gradlew testDebugUnitTest
+### Engineering notes
 
-# Verify the hard rule (run after a build)
-./scripts/check-no-internet.sh
+- **Memory-safe scanning.** Pages are held as small thumbnails; full-resolution bitmaps
+  are decoded one at a time while the PDF is streamed out. A 25-page scan of 12 MP photos
+  peaks at about 200 MB instead of 550 MB and exports in under 3 seconds on a Galaxy A15.
+- **Fast B&W filter.** The adaptive threshold uses a summed-area table, so each pixel costs
+  O(1) regardless of window size. Instrumented tests pin it pixel-for-pixel to the original
+  naive implementation.
+- **Swappable PDF engine.** Tools talk to a small `PdfEngine` interface; PdfBox is one
+  implementation behind it.
+
+## Project structure
+
+```
+app/src/main/kotlin/com/mabsSD/toolbox/
+├── pdf/        PdfEngine interface, PdfBox implementation, compressor, page ranges
+├── ocr/        On-device text recognition
+├── tools/      One class per tool, plus the registry, runner and result store
+├── history/    Room database of processed files
+├── settings/   DataStore preferences (theme, onboarding)
+├── utils/      Image filters, PDF export, file management
+└── ui/         Compose screens, components and theme
 ```
 
-### How the hard rule is enforced
+## Building
 
-ML Kit and Play services pull `INTERNET` in transitively, so the app manifest strips it
-with `tools:node="remove"` and the ML Kit dependencies exclude
-`com.google.android.datatransport`. The merged release manifest ends up with only
-`WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` and `FOREGROUND_SERVICE`, all from WorkManager.
+Requires **JDK 17–21** (AGP 8.7 rejects newer JDKs with an unhelpful
+`What went wrong: 25.0.3`). Android Studio's bundled JDK works.
 
-[`scripts/check-no-internet.sh`](scripts/check-no-internet.sh) is the guardrail, run by CI
-on every push. It fails if the source manifest stops stripping `INTERNET`, if any merged
-manifest grants it, **or if no merged manifest is found at all** — an unverifiable build is
-treated as a failure rather than a pass, so the check cannot go green without having
-actually checked something.
+```bash
+git clone https://github.com/Tshepomabs16/Toolbox.git
+cd Toolbox
+./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
+```
+
+```bash
+./gradlew testDebugUnitTest          # JVM unit tests
+./gradlew connectedDebugAndroidTest  # instrumented tests (device or emulator)
+./gradlew assembleRelease && ./scripts/check-no-internet.sh   # verify the hard rule
+```
+
+Scanning needs a device with Google Play services.
+
+## Roadmap
+
+- [ ] Open PDFs and images shared to Toolbox from other apps (the share-sheet entry is declared but not yet handled)
+- [ ] Searchable PDFs — add an OCR text layer to scans
+- [ ] Reorder pages in the scan review
+- [ ] Documents → PDF, sign and password-protect PDFs, QR scan and generate, batch mode
 
 ## License
 
-Private project.
+[MIT](LICENSE) © 2026 Tshepo Maabane.
+Plus Jakarta Sans is used under the [SIL Open Font License](licenses/OFL-PlusJakartaSans.txt).
