@@ -1,6 +1,6 @@
 # Toolbox Privacy Policy
 
-_Last updated: 2026-10-08_
+_Last updated: 2026-10-10_
 
 Toolbox is a document utility that works entirely on your device.
 
@@ -21,6 +21,10 @@ files, compressing, or recognising text — reads the files you choose, using
 Android's Storage Access Framework, and writes its output back to storage you
 choose. Toolbox does not scan your device for other files and does not access
 anything you have not explicitly selected.
+
+You can also share a PDF or image to Toolbox from another app, or open one
+with it. Toolbox copies that file into its own private storage so the tool you
+pick can work on it, and deletes the copy automatically within a day.
 
 Toolbox keeps a local, on-device history of files you have processed (name,
 size, and when it was created) so you can find them again from the Files tab.
