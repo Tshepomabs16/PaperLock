@@ -17,6 +17,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -30,9 +31,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mabsSD.toolbox.ui.screens.CompressScreen
 import com.mabsSD.toolbox.ui.screens.FilesScreen
 import com.mabsSD.toolbox.ui.screens.HomeScreen
+import com.mabsSD.toolbox.ui.screens.IncomingScreen
 import com.mabsSD.toolbox.ui.screens.MergeScreen
 import com.mabsSD.toolbox.ui.screens.OnboardingScreen
 import com.mabsSD.toolbox.ui.screens.ResultScreen
@@ -49,6 +52,7 @@ sealed class Screen(val route: String) {
     data object Files : Screen("files")
     data object Tools : Screen("tools")
     data object Settings : Screen("settings")
+    data object Incoming : Screen("incoming")
     data object Tool : Screen("tool/{toolId}") {
         fun createRoute(toolId: String) = "tool/$toolId"
     }
@@ -101,6 +105,18 @@ fun ToolboxApp(
     val showScanFab = currentRoute == Screen.Home.route || currentRoute == Screen.Files.route
 
     val toResult = { navController.navigate(Screen.Result.createRoute("last")) }
+
+    // A share or "Open with" from another app: offer the tools that fit.
+    // Same instance MainActivity feeds, since both are scoped to the activity.
+    val incomingVm: IncomingViewModel = viewModel()
+    val incoming by incomingVm.batch.collectAsState()
+    val showChooser by incomingVm.showChooser.collectAsState()
+    LaunchedEffect(showChooser) {
+        if (showChooser) {
+            incomingVm.chooserShown()
+            navController.navigate(Screen.Incoming.route) { launchSingleTop = true }
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -161,22 +177,46 @@ fun ToolboxApp(
                 SettingsScreen()
             }
 
+            composable(Screen.Incoming.route) {
+                val batch = incoming
+                if (batch == null) {
+                    // Only after Android killed and restored the app: the shared
+                    // copies are gone with the old process, so there's nothing to offer.
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
+                }
+                IncomingScreen(
+                    batch = batch,
+                    onToolChosen = { toolId ->
+                        navController.navigate(Screen.Tool.createRoute(toolId)) {
+                            popUpTo(Screen.Incoming.route) { inclusive = true }
+                        }
+                        // navigate() updates the back stack synchronously, so this
+                        // is the new tool screen's entry, before it first composes.
+                        navController.currentBackStackEntry?.let { incomingVm.handTo(it.id, batch.files) }
+                    },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
             composable(
                 route = Screen.Tool.route,
                 arguments = listOf(navArgument("toolId") { type = NavType.StringType })
             ) { entry ->
                 val toolId = entry.arguments?.getString("toolId") ?: return@composable
                 val back = { navController.popBackStack(); Unit }
+                // Files shared from another app, if that's how we got here.
+                val shared = remember(entry) { incomingVm.filesFor(entry.id) }
 
                 // Tools whose input cannot be expressed as "pick one file" get
                 // their own screen: scan is a camera flow, split needs a page
                 // range, merge needs several files in a chosen order.
                 when (toolId) {
-                    "scan" -> ScanScreen(onNavigateToResult = toResult, onBack = back)
-                    "split" -> SplitScreen(onNavigateToResult = toResult, onBack = back)
-                    "merge" -> MergeScreen(onNavigateToResult = toResult, onBack = back)
-                    "compress" -> CompressScreen(onNavigateToResult = toResult, onBack = back)
-                    else -> ToolScreen(toolId = toolId, onNavigateToResult = toResult, onBack = back)
+                    "scan" -> ScanScreen(onNavigateToResult = toResult, onBack = back, initialImages = shared)
+                    "split" -> SplitScreen(onNavigateToResult = toResult, onBack = back, initialPdf = shared.firstOrNull())
+                    "merge" -> MergeScreen(onNavigateToResult = toResult, onBack = back, initialPdfs = shared)
+                    "compress" -> CompressScreen(onNavigateToResult = toResult, onBack = back, initialFile = shared.firstOrNull())
+                    else -> ToolScreen(toolId = toolId, onNavigateToResult = toResult, onBack = back, initialFile = shared.firstOrNull())
                 }
             }
 

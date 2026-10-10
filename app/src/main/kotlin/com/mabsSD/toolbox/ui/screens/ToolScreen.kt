@@ -48,7 +48,8 @@ fun ToolScreen(
     toolId: String,
     onNavigateToResult: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialFile: android.net.Uri? = null,
 ) {
     val context = LocalContext.current
 
@@ -70,6 +71,14 @@ fun ToolScreen(
 
     DisposableEffect(runner) {
         onDispose { runner.dispose() }
+    }
+
+    // A file shared from another app: there's nothing else to choose, so run straight away.
+    LaunchedEffect(initialFile) {
+        val uri = initialFile ?: return@LaunchedEffect
+        val t = tool ?: return@LaunchedEffect
+        val accepted = t.acceptedInputs.firstOrNull() ?: return@LaunchedEffect
+        if (runnerState is ToolProgress.Idle) runner.runTool(t, listOf(ToolInput(uri, accepted)))
     }
 
     Scaffold(

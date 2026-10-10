@@ -58,6 +58,7 @@ fun CompressScreen(
     onNavigateToResult: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    initialFile: Uri? = null,
 ) {
     val context = LocalContext.current
     val container = remember { context.toolboxContainer() }
@@ -73,6 +74,13 @@ fun CompressScreen(
     var customMb by remember { mutableStateOf("") }
 
     DisposableEffect(runner) { onDispose { runner.dispose() } }
+
+    // A file shared from another app arrives already copied into the cache.
+    LaunchedEffect(initialFile) {
+        val uri = initialFile ?: return@LaunchedEffect
+        val type = if (uri.lastPathSegment?.endsWith(".pdf", ignoreCase = true) == true) ToolInputType.PDF else ToolInputType.IMAGE
+        loadSource(context, uri, type) { s, t, n, sz -> source = s; sourceType = t; sourceName = n; sourceSize = sz }
+    }
 
     val pdfPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()

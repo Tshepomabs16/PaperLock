@@ -48,6 +48,12 @@ class WorkingFileManager(private val context: Context) {
                 file.delete()
             }
         }
+        // Copies of files shared in from other apps, one folder per share.
+        // Only this folder is swept recursively: other cache subfolders belong
+        // to libraries (ML Kit, Play services) that manage their own.
+        File(cacheDir, "incoming").listFiles()?.forEach { share ->
+            if (isOrphaned(share)) share.deleteRecursively()
+        }
     }
 
     private fun isOrphaned(file: File): Boolean {

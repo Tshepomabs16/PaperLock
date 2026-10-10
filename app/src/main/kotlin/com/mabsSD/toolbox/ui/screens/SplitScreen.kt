@@ -51,13 +51,14 @@ fun SplitScreen(
     onNavigateToResult: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    initialPdf: Uri? = null,
 ) {
     val context = LocalContext.current
     val container = remember { context.toolboxContainer() }
     val runner = remember { ToolRunner() }
     val runnerState by runner.state.collectAsState()
 
-    var source by remember { mutableStateOf<Uri?>(null) }
+    var source by remember { mutableStateOf(initialPdf) }
     var sourceName by remember { mutableStateOf<String?>(null) }
     var pageCount by remember { mutableStateOf(0) }
     var loadError by remember { mutableStateOf<String?>(null) }

@@ -57,13 +57,18 @@ fun MergeScreen(
     onNavigateToResult: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    initialPdfs: List<Uri> = emptyList(),
 ) {
     val context = LocalContext.current
     val container = remember { context.toolboxContainer() }
     val runner = remember { ToolRunner() }
     val runnerState by runner.state.collectAsState()
 
-    val entries = remember { mutableStateListOf<MergeEntry>() }
+    val entries = remember {
+        mutableStateListOf<MergeEntry>().apply {
+            initialPdfs.forEach { add(MergeEntry(it, container.workingFileManager.getFileName(it) ?: "Document")) }
+        }
+    }
 
     DisposableEffect(runner) { onDispose { runner.dispose() } }
 

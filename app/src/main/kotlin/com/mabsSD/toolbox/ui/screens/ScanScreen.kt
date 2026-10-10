@@ -93,7 +93,8 @@ private const val EXPORT_MAX_PX = 2400
 fun ScanScreen(
     onNavigateToResult: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialImages: List<Uri> = emptyList(),
 ) {
     val context = LocalContext.current
 
@@ -141,6 +142,18 @@ fun ScanScreen(
             // Backing out of the camera is a normal exit, not a failure.
             Activity.RESULT_CANCELED -> Unit
             else -> errorMessage = "The scanner stopped unexpectedly (result code ${result.resultCode})."
+        }
+    }
+
+    // Images shared from another app go straight into the tray, as if imported.
+    androidx.compose.runtime.LaunchedEffect(initialImages) {
+        if (initialImages.isEmpty() || pages.isNotEmpty()) return@LaunchedEffect
+        loadThumbnails(scope, context, initialImages) { added ->
+            pages = added
+            selectedPageIndex = 0
+            errorMessage = if (added.size < initialImages.size) {
+                "${initialImages.size - added.size} image(s) couldn't be read and were skipped."
+            } else null
         }
     }
 
