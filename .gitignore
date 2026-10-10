@@ -49,3 +49,6 @@ Thumbs.db
 # Logs
 *.log
 *.hprof
+
+# Release signing (upload key lives outside the repo)
+keystore.properties

@@ -13,7 +13,7 @@
 # PDFs we produce do not use JPX image encoding, so these are safe to drop.
 -dontwarn com.gemalto.jp2.**
 
-# We deliberately exclude Google's datatransport (telemetry) library to
-# guarantee no network access. ML Kit's bundled code still references it at
-# the bytecode level, so silence the R8 warnings for those unreachable paths.
+# ML Kit references Google's datatransport (telemetry) library. It ships in the
+# app (excluding it crashes the scanner), but with no INTERNET permission it
+# can never send anything. Silence R8 warnings about its optional paths.
 -dontwarn com.google.android.datatransport.**
