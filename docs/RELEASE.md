@@ -50,6 +50,11 @@ A debug build already installed must be uninstalled first (different signature).
 - [ ] Password-protected PDF → clear error, no crash
 - [ ] Rotate the phone on the chooser and on a tool screen
 - [ ] Themed icons on (Android 13+): launcher icon follows the wallpaper colour
+- [ ] Dock: tab switching (dash moves, light haptic), Scan button, hides on scroll down and
+      returns on scroll up, slides away on tool screens; last list item scrolls clear of it
+- [ ] Transitions: screens slide in and back out; swipe-back gesture previews the screen behind
+- [ ] Rotate to landscape: dock becomes a rail on the left, content stays readable
+- [ ] Tablet or large emulator: rail, capped content width, Tools grid with more columns
 
 ## Play Console
 
