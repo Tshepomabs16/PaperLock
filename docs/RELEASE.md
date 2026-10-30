@@ -54,7 +54,7 @@ A debug build already installed must be uninstalled first (different signature).
 ## Play Console
 
 - [ ] App content → Privacy policy URL:
-      `https://github.com/Tshepomabs16/Toolbox/blob/main/PRIVACY.md`
+      `https://github.com/Tshepomabs16/PaperLock/blob/main/PRIVACY.md`
 - [ ] Data safety: no data collected, no data shared
 - [ ] Content rating questionnaire, target audience, ads: none
 - [ ] Store listing: text and graphics in [`fastlane/metadata/android/en-US`](../fastlane/metadata/android/en-US)

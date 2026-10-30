@@ -8,7 +8,7 @@
 
 No account. No upload. No ads. No watermark. No `INTERNET` permission.
 
-[![CI](https://github.com/Tshepomabs16/Toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/Tshepomabs16/Toolbox/actions/workflows/ci.yml)
+[![CI](https://github.com/Tshepomabs16/PaperLock/actions/workflows/ci.yml/badge.svg)](https://github.com/Tshepomabs16/PaperLock/actions/workflows/ci.yml)
 ![Platform](https://img.shields.io/badge/platform-Android%207.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -99,8 +99,8 @@ Requires **JDK 17–21** (AGP 8.x rejects newer JDKs with an unhelpful
 `What went wrong: 25.0.3`). Android Studio's bundled JDK works.
 
 ```bash
-git clone https://github.com/Tshepomabs16/Toolbox.git
-cd Toolbox
+git clone https://github.com/Tshepomabs16/PaperLock.git
+cd PaperLock
 ./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
 ```
 
