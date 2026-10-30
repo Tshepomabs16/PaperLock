@@ -7,15 +7,17 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val LightColors = lightColorScheme(
-    primary = Indigo,
-    onPrimary = OnIndigo,
-    primaryContainer = IndigoContainer,
-    onPrimaryContainer = OnIndigoContainer,
+    primary = Ink,
+    onPrimary = OnInk,
+    primaryContainer = AmberContainer,
+    onPrimaryContainer = OnAmberContainer,
 
+    // secondaryContainer paints selected chips, segmented buttons and the
+    // bottom-nav indicator: amber, like the icon, not a separate accent.
     secondary = Teal,
     onSecondary = PaperSurface,
-    secondaryContainer = TealContainer,
-    onSecondaryContainer = OnIndigoContainer,
+    secondaryContainer = AmberContainer,
+    onSecondaryContainer = OnAmberContainer,
 
     tertiary = Amber,
     onTertiary = OnAmber,
@@ -49,18 +51,18 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = IndigoLight,
-    onPrimary = OnIndigoLight,
-    primaryContainer = IndigoContainerDark,
-    onPrimaryContainer = OnIndigoContainerDark,
+    primary = AmberLight,
+    onPrimary = OnAmberLight,
+    primaryContainer = AmberContainerDark,
+    onPrimaryContainer = OnAmberContainerDark,
 
     secondary = TealLight,
-    onSecondary = OnIndigoLight,
-    secondaryContainer = TealContainerDark,
-    onSecondaryContainer = OnIndigoContainerDark,
+    onSecondary = OnAmberLight,
+    secondaryContainer = AmberContainerDark,
+    onSecondaryContainer = OnAmberContainerDark,
 
     tertiary = AmberLight,
-    onTertiary = OnIndigoLight,
+    onTertiary = OnAmberLight,
     tertiaryContainer = InkSurfaceVariant,
     onTertiaryContainer = AmberLight,
 
@@ -79,7 +81,7 @@ private val DarkColors = darkColorScheme(
     surfaceDim = InkBackground,
 
     error = DangerDark,
-    onError = OnIndigoLight,
+    onError = OnAmberLight,
     errorContainer = InkSurfaceVariant,
     onErrorContainer = DangerDark,
 

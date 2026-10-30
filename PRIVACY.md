@@ -1,58 +1,58 @@
-# Toolbox Privacy Policy
+# PaperLock Privacy Policy
 
-_Last updated: 2026-10-10_
+_Last updated: 2026-10-30_
 
-Toolbox is a document utility that works entirely on your device.
+PaperLock is a document utility that works entirely on your device.
 
 ## The short version
 
-- Toolbox has no `INTERNET` permission. It cannot send your files anywhere,
+- PaperLock has no `INTERNET` permission. It cannot send your files anywhere,
   because it has no way to reach a network at all. This is enforced by the
   Android operating system itself, not by a setting you have to trust.
 - Splitting, merging, compressing, and text recognition happen on your
   device. The text-recognition model is bundled inside the app.
-- Toolbox does not have an account system, a login, or a cloud service of any
+- PaperLock does not have an account system, a login, or a cloud service of any
   kind to send data to even if it wanted to.
 
-## What Toolbox does with your files
+## What PaperLock does with your files
 
 Every operation you run — scanning a document, splitting a PDF, merging
 files, compressing, or recognising text — reads the files you choose, using
 Android's Storage Access Framework, and writes its output back to storage you
-choose. Toolbox does not scan your device for other files and does not access
+choose. PaperLock does not scan your device for other files and does not access
 anything you have not explicitly selected.
 
-You can also share a PDF or image to Toolbox from another app, or open one
-with it. Toolbox copies that file into its own private storage so the tool you
+You can also share a PDF or image to PaperLock from another app, or open one
+with it. PaperLock copies that file into its own private storage so the tool you
 pick can work on it, and deletes the copy automatically within a day.
 
-Toolbox keeps a local, on-device history of files you have processed (name,
+PaperLock keeps a local, on-device history of files you have processed (name,
 size, and when it was created) so you can find them again from the Files tab.
 This history never leaves your device. You can delete any entry, and its file,
 from the Files tab; everything is removed if you uninstall the app.
 
-## What Toolbox does not do
+## What PaperLock does not do
 
-- Toolbox does not collect analytics, crash reports, or usage data.
-- Toolbox does not use advertising or advertising identifiers.
-- Toolbox does not require an account, and has nowhere to send one if it did.
-- Toolbox does not request camera, contacts, location, microphone, or storage
+- PaperLock does not collect analytics, crash reports, or usage data.
+- PaperLock does not use advertising or advertising identifiers.
+- PaperLock does not require an account, and has nowhere to send one if it did.
+- PaperLock does not request camera, contacts, location, microphone, or storage
   permissions. It reads only the files you explicitly select.
 
 ## Scanning
 
-Toolbox does not request camera permission itself. The Scan feature uses the
+PaperLock does not request camera permission itself. The Scan feature uses the
 document scanner provided by Google Play services on your device, which shows
-its own camera screen and returns only the pages you capture to Toolbox.
-Toolbox then processes those pages on your device.
+its own camera screen and returns only the pages you capture to PaperLock.
+PaperLock then processes those pages on your device.
 
 ## Changes to this policy
 
-If Toolbox ever changes what it does with your data, this policy will be
+If PaperLock ever changes what it does with your data, this policy will be
 updated before that change ships, and the version history will remain
 visible in the app's source repository.
 
 ## Contact
 
 Questions about this policy can be sent to the contact address listed on
-Toolbox's Play Store listing.
+PaperLock's Play Store listing.

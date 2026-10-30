@@ -1,1 +1,1 @@
-Toolbox: Private PDF Scanner
+PaperLock: Offline PDF Scanner

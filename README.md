@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="Toolbox icon" />
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="PaperLock icon" />
 
-# Toolbox
+# PaperLock
 
 **Scan, split, merge, compress and OCR documents — entirely on your phone.**
 
@@ -28,7 +28,7 @@ No account. No upload. No ads. No watermark. No `INTERNET` permission.
 ## Why
 
 Most free scanner and PDF apps upload your documents — IDs, payslips, contracts — to
-someone else's server to process them. Toolbox does all of the work on the device, and
+someone else's server to process them. PaperLock does all of the work on the device, and
 it is built so that it **can't** do otherwise: the shipped app has no network permission
 at all, and CI fails the build if one ever appears.
 
@@ -43,7 +43,7 @@ at all, and CI fails the build if one ever appears.
 | 🔤 | **OCR** | Recognise text in an image and copy it out. The recognition model is bundled in the app, so it works offline. |
 | 🗂️ | **Files** | Every result is kept in an on-device history you can search, sort, open, share, save anywhere or delete. |
 
-Start from anywhere: share a PDF or image to Toolbox from another app (or pick it in
+Start from anywhere: share a PDF or image to PaperLock from another app (or pick it in
 "Open with") and it offers the tools that fit. Light, dark and system themes; results keep sensible file names
 (`Scan 2026-10-08 16.24.pdf`, `report_p1-3.pdf`) when you share or save them.
 

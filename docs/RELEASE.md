@@ -1,4 +1,4 @@
-# Releasing Toolbox
+# Releasing PaperLock
 
 ## Signing
 
@@ -40,13 +40,13 @@ A debug build already installed must be uninstalled first (different signature).
 - [ ] Result: Open, Share, Save to… (correct file name)
 - [ ] Files tab: search, sort, share, delete
 - [ ] Settings: Light / Dark / System, persists after restart
-- [ ] **Share to Toolbox** from Files / Gallery:
+- [ ] **Share to PaperLock** from Files / Gallery:
   - [ ] one PDF → chooser offers Split, Compress, Merge
   - [ ] several PDFs → Merge, files pre-filled
   - [ ] one image → Scan, OCR, Compress (OCR runs straight away)
   - [ ] several images → Scan, pages pre-filled
   - [ ] a PDF and an image together → "share them separately" message
-- [ ] **Open with → Toolbox** on a PDF from a file manager
+- [ ] **Open with → PaperLock** on a PDF from a file manager
 - [ ] Password-protected PDF → clear error, no crash
 - [ ] Rotate the phone on the chooser and on a tool screen
 - [ ] Themed icons on (Android 13+): launcher icon follows the wallpaper colour
@@ -58,6 +58,8 @@ A debug build already installed must be uninstalled first (different signature).
 - [ ] Data safety: no data collected, no data shared
 - [ ] Content rating questionnaire, target audience, ads: none
 - [ ] Store listing: text and graphics in [`fastlane/metadata/android/en-US`](../fastlane/metadata/android/en-US)
+- [ ] Retake the phone screenshots (`images/phoneScreenshots`, and `docs/screenshots` for the README):
+      the current ones still show the old blue Toolbox design
 - [ ] Closed test: personal accounts created after Nov 2023 need **12 testers opted
       in for 14 consecutive days** before production access
 - [ ] Bump `versionCode` in `app/build.gradle.kts` for every upload after the first

@@ -31,13 +31,13 @@ import com.mabsSD.toolbox.ui.theme.ThemeMode
 import com.mabsSD.toolbox.ui.toolboxContainer
 import kotlinx.coroutines.launch
 
-private const val PRIVACY_SUMMARY = "Toolbox has no INTERNET permission — it has no way to send " +
+private const val PRIVACY_SUMMARY = "PaperLock has no INTERNET permission — it has no way to send " +
     "your files anywhere. Splitting, merging, compressing, and text recognition all run on " +
     "this device; the text-recognition model is bundled inside the app. There is no account " +
     "and no cloud service to send data to even if the app wanted to.\n\n" +
-    "Toolbox doesn't request camera permission. The scanning camera is the system document " +
+    "PaperLock doesn't request camera permission. The scanning camera is the system document " +
     "scanner from Google Play services, which hands back only the pages you capture.\n\n" +
-    "Toolbox keeps a local, on-device history of files you've processed so you can find them " +
+    "PaperLock keeps a local, on-device history of files you've processed so you can find them " +
     "again from the Files tab. Delete any of them from there at any time."
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,7 +101,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(8.dp))
                 BorderedBlock {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Toolbox", style = MaterialTheme.typography.titleMedium)
+                        Text("PaperLock", style = MaterialTheme.typography.titleMedium)
                         Text(
                             "Version ${BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.bodySmall,

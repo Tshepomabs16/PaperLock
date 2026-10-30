@@ -53,7 +53,7 @@ private val pages = listOf(
     OnboardingPage(
         Icons.Default.Lock,
         "Privacy first",
-        "Toolbox has no INTERNET permission. Your files never leave your device — it isn't possible.",
+        "PaperLock has no INTERNET permission. Your files never leave your device — it isn't possible.",
     ),
 )
 

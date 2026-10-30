@@ -82,7 +82,7 @@ class CompressTool(
             outputUri = outputUri,
             outputName = name,
             outputSize = workingFileManager.getFileSize(outputUri),
-            note = "This file is already smaller than anything Toolbox could make without " +
+            note = "This file is already smaller than anything PaperLock could make without " +
                 "losing quality, so it was kept as it is (${formatFileSize(sourceSize)}).",
         )
     }

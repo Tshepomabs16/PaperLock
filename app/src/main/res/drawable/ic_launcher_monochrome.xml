@@ -7,7 +7,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.2"
+        android:pathData="M44,51V40.5A10,10 0 0,1 64,40.5V51" />
+    <path
         android:fillColor="#FFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M41,34h26a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-26a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5zM45,45h18v3h-18zM45,52h18v3h-18zM45,59h12v3h-12z" />
+        android:pathData="M38.5,50H67L75,58V77.5A5.5,5.5 0 0,1 69.5,83H38.5A5.5,5.5 0 0,1 33,77.5V55.5A5.5,5.5 0 0,1 38.5,50ZM42.2,61H64.8A1.7,1.7 0 0,1 64.8,64.4H42.2A1.7,1.7 0 0,1 42.2,61ZM42.2,67.5H64.8A1.7,1.7 0 0,1 64.8,70.9H42.2A1.7,1.7 0 0,1 42.2,67.5ZM42.2,74H52.3A1.7,1.7 0 0,1 52.3,77.4H42.2A1.7,1.7 0 0,1 42.2,74Z" />
 </vector>

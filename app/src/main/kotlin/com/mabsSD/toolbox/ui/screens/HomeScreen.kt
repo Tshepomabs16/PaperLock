@@ -169,7 +169,7 @@ fun HomeScreen(
 private fun Header(modifier: Modifier = Modifier) {
     Column(modifier = modifier.padding(top = 24.dp, bottom = 4.dp)) {
         Text(
-            "Toolbox",
+            "PaperLock",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )

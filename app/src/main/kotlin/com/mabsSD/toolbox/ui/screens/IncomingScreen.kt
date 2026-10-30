@@ -74,7 +74,7 @@ fun IncomingScreen(
     val choices = choicesFor(batch)
 
     Scaffold(
-        topBar = { ToolboxTopBar(title = "Open with Toolbox", onBack = onBack) },
+        topBar = { ToolboxTopBar(title = "Open with PaperLock", onBack = onBack) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize(),
     ) { padding ->
@@ -123,8 +123,8 @@ fun IncomingScreen(
             if (choices.isEmpty()) {
                 BorderedBlock {
                     Text(
-                        if (batch.files.isEmpty()) "Toolbox couldn't open what was shared. It works with PDFs and images."
-                        else "Toolbox can't work on PDFs and images together. Share them separately.",
+                        if (batch.files.isEmpty()) "PaperLock couldn't open what was shared. It works with PDFs and images."
+                        else "PaperLock can't work on PDFs and images together. Share them separately.",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
