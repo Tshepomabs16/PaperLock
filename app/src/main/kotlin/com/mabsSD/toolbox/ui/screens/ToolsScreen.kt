@@ -1,6 +1,10 @@
 package com.mabsSD.toolbox.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import com.mabsSD.toolbox.ui.components.LocalDockClearance
+import com.mabsSD.toolbox.ui.components.rememberPressScale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,12 +52,12 @@ fun ToolsScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { inner ->
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Adaptive(minSize = 160.dp), // 2 across on phones, more on tablets
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
                 top = inner.calculateTopPadding() + 8.dp,
-                bottom = inner.calculateBottomPadding() + 24.dp,
+                bottom = inner.calculateBottomPadding() + LocalDockClearance.current + 24.dp,
             ),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -101,15 +105,18 @@ private fun ToolGridCard(
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val source = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
         enabled = enabled,
+        interactionSource = source,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = if (enabled) scheme.surface else scheme.surfaceVariant,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = if (enabled) 1.dp else 0.dp),
         modifier = modifier
+            .then(rememberPressScale(source))
             .fillMaxWidth()
             .height(112.dp)
             .semantics { if (!enabled) stateDescription = "Coming soon" },

@@ -1,5 +1,6 @@
 package com.mabsSD.toolbox.ui.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,12 +70,14 @@ fun FileHistoryCard(
         DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(entry.createdAtMillis))
     }
 
+    val source = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
+        interactionSource = source,
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.then(rememberPressScale(source, pressedScale = 0.98f)).fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier

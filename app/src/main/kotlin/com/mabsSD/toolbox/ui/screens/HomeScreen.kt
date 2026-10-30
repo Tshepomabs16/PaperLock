@@ -1,7 +1,11 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.BoxWithConstraints
+import com.mabsSD.toolbox.ui.components.rememberPressScale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MergeType
@@ -101,7 +101,7 @@ fun HomeScreen(
                 start = 20.dp,
                 end = 20.dp,
                 top = inner.calculateTopPadding(),
-                bottom = inner.calculateBottomPadding() + 96.dp, // clears the FAB
+                bottom = inner.calculateBottomPadding() + LocalDockClearance.current + 16.dp,
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -146,6 +146,7 @@ fun HomeScreen(
             } else {
                 items(recent, key = { it.id }) { entry ->
                     FileHistoryCard(
+                        modifier = Modifier.animateItem(),
                         entry = entry,
                         onClick = {
                             ResultStore.updateLastResult(
@@ -203,11 +204,14 @@ private fun OfflineBadge(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val source = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
+        interactionSource = source,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         modifier = modifier
+            .then(rememberPressScale(source, pressedScale = 0.97f))
             .fillMaxWidth()
             .height(56.dp),
     ) {
@@ -234,28 +238,33 @@ private fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 private fun QuickToolsGrid(onToolSelected: (String) -> Unit, modifier: Modifier = Modifier) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(184.dp), // two rows; nested inside the outer LazyColumn's scroll
-    ) {
-        itemsIndexed(quickTools, span = { _, _ -> GridItemSpan(1) }) { _, tool ->
-            QuickToolCard(tool = tool, onClick = { onToolSelected(tool.id) })
+    // Plain rows rather than a lazy grid: four cards don't need laziness, and a
+    // nested lazy grid needed a hard-coded height that broke on wider screens.
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val columns = if (maxWidth >= 560.dp) 4 else 2
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            quickTools.chunked(columns).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { tool ->
+                        QuickToolCard(tool = tool, onClick = { onToolSelected(tool.id) }, modifier = Modifier.weight(1f))
+                    }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun QuickToolCard(tool: ToolItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val source = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
+        interactionSource = source,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = modifier.fillMaxWidth().height(86.dp),
+        modifier = modifier.then(rememberPressScale(source)).fillMaxWidth().height(86.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(16.dp),

@@ -1,6 +1,9 @@
 package com.mabsSD.toolbox.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import com.mabsSD.toolbox.ui.components.rememberPressScale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -144,12 +147,14 @@ fun IncomingScreen(
 
 @Composable
 private fun ChoiceCard(tool: ToolItem, why: String, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
+        interactionSource = source,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.then(rememberPressScale(source)).fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),

@@ -1,5 +1,6 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,7 +58,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 start = 20.dp,
                 end = 20.dp,
                 top = inner.calculateTopPadding(),
-                bottom = inner.calculateBottomPadding() + 24.dp,
+                bottom = inner.calculateBottomPadding() + LocalDockClearance.current + 24.dp,
             ),
             modifier = Modifier.fillMaxSize(),
         ) {

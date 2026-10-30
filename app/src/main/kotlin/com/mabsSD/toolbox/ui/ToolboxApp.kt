@@ -1,29 +1,55 @@
 package com.mabsSD.toolbox.ui
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,6 +58,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mabsSD.toolbox.ui.components.DockDestination
+import com.mabsSD.toolbox.ui.components.DockHeight
+import com.mabsSD.toolbox.ui.components.DockMargin
+import com.mabsSD.toolbox.ui.components.FloatingDock
+import com.mabsSD.toolbox.ui.components.LocalDockClearance
+import com.mabsSD.toolbox.ui.components.popEnter
+import com.mabsSD.toolbox.ui.components.popExit
+import com.mabsSD.toolbox.ui.components.pushEnter
+import com.mabsSD.toolbox.ui.components.pushExit
+import com.mabsSD.toolbox.ui.components.tabEnter
+import com.mabsSD.toolbox.ui.components.tabExit
 import com.mabsSD.toolbox.ui.screens.CompressScreen
 import com.mabsSD.toolbox.ui.screens.FilesScreen
 import com.mabsSD.toolbox.ui.screens.HomeScreen
@@ -62,7 +99,7 @@ sealed class Screen(val route: String) {
 }
 
 /**
- * Only these four show the bottom nav and the scan FAB.
+ * Only these four show the dock.
  *
  * Deliberately a top-level property, not a member of Screen's own companion
  * object: a sealed class's companion referencing its own sibling nested
@@ -72,18 +109,20 @@ sealed class Screen(val route: String) {
  */
 private val topLevelRoutes = setOf(Screen.Home.route, Screen.Files.route, Screen.Tools.route, Screen.Settings.route)
 
-private data class BottomNavSpec(
-    val screen: Screen,
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+private val dockDestinations = listOf(
+    DockDestination(Screen.Home.route, "Home", Icons.Outlined.Home, Icons.Rounded.Home),
+    DockDestination(Screen.Files.route, "Files", Icons.Outlined.Folder, Icons.Rounded.Folder),
+    DockDestination(Screen.Tools.route, "Tools", Icons.Outlined.GridView, Icons.Rounded.GridView),
+    DockDestination(Screen.Settings.route, "Settings", Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
-private val bottomNavItems = listOf(
-    BottomNavSpec(Screen.Home, "Home", Icons.Default.Home),
-    BottomNavSpec(Screen.Files, "Files", Icons.Default.Folder),
-    BottomNavSpec(Screen.Tools, "Tools", Icons.Default.Build),
-    BottomNavSpec(Screen.Settings, "Settings", Icons.Default.Settings),
-)
+/** Screens wider than this get the side rail and a width cap on content. */
+private const val WIDE_SCREEN_DP = 600
+
+/** Content never stretches past this on tablets; lines and cards stay readable. */
+private val MaxContentWidth = 840.dp
+
+private fun isTopLevel(route: String?) = route in topLevelRoutes
 
 @Composable
 fun ToolboxApp(
@@ -102,7 +141,28 @@ fun ToolboxApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val onTopLevelScreen = currentRoute in topLevelRoutes
-    val showScanFab = currentRoute == Screen.Home.route || currentRoute == Screen.Files.route
+    val wide = LocalConfiguration.current.screenWidthDp >= WIDE_SCREEN_DP
+
+    // Like the desktop dock's auto-hide: scrolling content down tucks the dock
+    // away, scrolling back up brings it back. Every new screen starts with it shown.
+    var dockShown by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRoute) { dockShown = true }
+    val hideOnScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -6f) dockShown = false else if (available.y > 6f) dockShown = true
+                return Offset.Zero
+            }
+        }
+    }
+    val goTo: (DockDestination) -> Unit = { dest ->
+        navController.navigate(dest.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    val scan = { navController.navigate(Screen.Tool.createRoute("scan")) }
 
     val toResult = { navController.navigate(Screen.Result.createRoute("last")) }
 
@@ -118,32 +178,52 @@ fun ToolboxApp(
         }
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            if (onTopLevelScreen) {
-                ToolboxBottomNav(currentRoute = currentRoute, navController = navController)
-            }
-        },
-        floatingActionButton = {
-            if (showScanFab) {
-                FloatingActionButton(
-                    onClick = { navController.navigate(Screen.Tool.createRoute("scan")) },
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiary,
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // Wide screens: the dock stands upright as a rail beside the content.
+        if (wide) {
+            AnimatedVisibility(
+                visible = onTopLevelScreen,
+                enter = slideInHorizontally(spring(dampingRatio = 0.8f, stiffness = 400f)) { -it * 2 } + fadeIn(),
+                exit = slideOutHorizontally(spring(stiffness = 600f)) { -it * 2 } + fadeOut(),
+                modifier = Modifier.fillMaxHeight(),
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+                        .padding(start = DockMargin, end = 4.dp),
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Scan document")
+                    FloatingDock(dockDestinations, currentRoute, goTo, scan, vertical = true)
                 }
             }
-        },
-    ) { innerPadding ->
-        NavHost(
+        }
+
+        Box(
+            contentAlignment = Alignment.TopCenter,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .nestedScroll(hideOnScroll),
+        ) {
+          CompositionLocalProvider(
+              LocalDockClearance provides if (wide) 0.dp else DockHeight + DockMargin + 16.dp,
+          ) {
+            NavHost(
             navController = navController,
             startDestination = if (seen) Screen.Home.route else Screen.Onboarding.route,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+                .widthIn(max = MaxContentWidth)
+                .fillMaxSize(),
+            // Tabs cross-fade; anything opened from them is pushed on and popped off.
+            enterTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabEnter() else pushEnter() },
+            exitTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabExit() else pushExit() },
+            popEnterTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabEnter() else popEnter() },
+            popExitTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabExit() else popExit() },
         ) {
             composable(Screen.Onboarding.route) {
                 OnboardingScreen(
@@ -231,28 +311,25 @@ fun ToolboxApp(
                 )
             }
         }
-    }
-}
+          }
 
-@Composable
-private fun ToolboxBottomNav(
-    currentRoute: String?,
-    navController: androidx.navigation.NavHostController,
-) {
-    NavigationBar {
-        bottomNavItems.forEach { item ->
-            NavigationBarItem(
-                selected = currentRoute == item.screen.route,
-                onClick = {
-                    navController.navigate(item.screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
-            )
+            // Phones: the dock floats over the bottom of the content. It leaves
+            // with a spring when a tool opens (as iOS hides its tab bar on push)
+            // and while scrolling down.
+            if (!wide) {
+                // Fully qualified: inside the Row, the bare name resolves to RowScope's variant.
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = onTopLevelScreen && dockShown,
+                    enter = slideInVertically(spring(dampingRatio = 0.75f, stiffness = 420f)) { it * 2 } + fadeIn(),
+                    exit = slideOutVertically(spring(stiffness = 600f)) { it * 2 } + fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = DockMargin),
+                ) {
+                    FloatingDock(dockDestinations, currentRoute, goTo, scan, vertical = false)
+                }
+            }
         }
     }
 }

@@ -44,7 +44,8 @@ at all, and CI fails the build if one ever appears.
 | 🗂️ | **Files** | Every result is kept in an on-device history you can search, sort, open, share, save anywhere or delete. |
 
 Start from anywhere: share a PDF or image to PaperLock from another app (or pick it in
-"Open with") and it offers the tools that fit. Light, dark and system themes; results keep sensible file names
+"Open with") and it offers the tools that fit. Built for phones and tablets: a floating
+dock on phones, a side rail on wide screens, spring animations throughout. Light, dark and system themes; results keep sensible file names
 (`Scan 2026-10-08 16.24.pdf`, `report_p1-3.pdf`) when you share or save them.
 
 ## Privacy by construction

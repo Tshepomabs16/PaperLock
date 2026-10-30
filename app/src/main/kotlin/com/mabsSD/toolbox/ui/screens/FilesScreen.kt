@@ -1,5 +1,6 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -86,7 +87,7 @@ fun FilesScreen(
                 start = 20.dp,
                 end = 20.dp,
                 top = inner.calculateTopPadding(),
-                bottom = inner.calculateBottomPadding() + 96.dp,
+                bottom = inner.calculateBottomPadding() + LocalDockClearance.current + 16.dp,
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -118,6 +119,7 @@ fun FilesScreen(
             } else {
                 items(visible, key = { it.id }) { entry ->
                     FileHistoryCard(
+                        modifier = Modifier.animateItem(),
                         entry = entry,
                         onClick = { openHistoryEntry(entry, onOpenResult) },
                         onShare = { shareResult(context, Uri.parse(entry.outputUri), entry.outputName) },
