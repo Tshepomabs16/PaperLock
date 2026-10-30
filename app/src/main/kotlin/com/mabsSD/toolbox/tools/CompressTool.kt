@@ -48,6 +48,17 @@ class CompressTool(
         val sourceSize = workingFileManager.getFileSize(input.uri)
         val targetBytes = if (sourceSize > 0) minOf(requestedTarget, sourceSize - 1) else requestedTarget
 
+        // Already under the limit: it's ready to upload as it is. Re-encoding
+        // would only cost quality (a 90 KB photo came back as a blurrier 60 KB
+        // one against a 1 MB target).
+        if (sourceSize in 1..requestedTarget) {
+            return keepOriginal(
+                input,
+                note = "This file is already under ${formatFileSize(requestedTarget)}, so it was kept " +
+                    "as it is (${formatFileSize(sourceSize)}).",
+            )
+        }
+
         val result = when (input.type) {
             ToolInputType.PDF -> compressPdf(input, targetBytes, requestedTarget, onProgress)
             ToolInputType.IMAGE -> compressImage(input, targetBytes, requestedTarget, onProgress)
@@ -55,7 +66,12 @@ class CompressTool(
         }
 
         if (sourceSize > 0 && result.outputSize >= sourceSize) {
-            return keepOriginal(input, sourceSize, result)
+            workingFileManager.deleteFile(result.outputUri)
+            return keepOriginal(
+                input,
+                note = "This file is already smaller than anything PaperLock could make without " +
+                    "losing quality, so it was kept as it is (${formatFileSize(sourceSize)}).",
+            )
         }
         if (sourceSize > 0 && result.note == null) {
             val saved = ((sourceSize - result.outputSize) * 100 / sourceSize).toInt()
@@ -67,11 +83,10 @@ class CompressTool(
     }
 
     /**
-     * Nothing beat the original, so return the original untouched rather than a
-     * larger or lower-quality copy of it.
+     * Return the original untouched rather than a larger or lower-quality copy
+     * of it, with [note] saying why.
      */
-    private fun keepOriginal(input: ToolInput, sourceSize: Long, attempt: ToolResult): ToolResult {
-        workingFileManager.deleteFile(attempt.outputUri)
+    private fun keepOriginal(input: ToolInput, note: String): ToolResult {
         val name = workingFileManager.getFileName(input.uri) ?: "document"
         val extension = name.substringAfterLast('.', "bin")
         val outputUri = workingFileManager.createTempFile(prefix = "compressed_", extension = extension)
@@ -82,8 +97,7 @@ class CompressTool(
             outputUri = outputUri,
             outputName = name,
             outputSize = workingFileManager.getFileSize(outputUri),
-            note = "This file is already smaller than anything PaperLock could make without " +
-                "losing quality, so it was kept as it is (${formatFileSize(sourceSize)}).",
+            note = note,
         )
     }
 

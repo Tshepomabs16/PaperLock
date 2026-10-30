@@ -61,10 +61,9 @@ class ImageProcessorTest {
 
     @Test
     fun binary_matchesReferenceImplementationExactly() {
-        // The window scales with the long side (8px at 2400px), so a 360px
-        // image uses max(2, round(8 * 360 / 2400)) = 2.
+        // The window scales with the long side (1/16 of it).
         val src = pageLike(360, 240)
-        val window = maxOf(2, Math.round(8 * 360 / 2400f))
+        val window = ImageProcessor.windowFor(360, 240)
         val expected = referenceAdaptive(src, window)
 
         val actual = src.copy(Bitmap.Config.ARGB_8888, true)
@@ -77,10 +76,9 @@ class ImageProcessorTest {
 
     @Test
     fun binary_atFullScanWindow_matchesReference() {
-        // Exercise the export-size window (8) on a cropped strip so the slow
-        // reference stays fast: same long side as a real page, short height.
-        val src = pageLike(2400, 40, seed = 3)
-        val expected = referenceAdaptive(src, 8)
+        // A wide, short strip keeps the slow reference fast with a large window.
+        val src = pageLike(600, 40, seed = 3)
+        val expected = referenceAdaptive(src, ImageProcessor.windowFor(600, 40))
         val actual = src.copy(Bitmap.Config.ARGB_8888, true)
         ImageProcessor.applyInPlace(actual, ScanFilter.BINARY)
         val got = pixelsOf(actual)

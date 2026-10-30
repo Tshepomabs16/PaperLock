@@ -7,7 +7,6 @@ import com.mabsSD.toolbox.pdf.PdfBoxEngine
 import com.mabsSD.toolbox.pdf.PdfEngine
 import com.mabsSD.toolbox.settings.PreferencesStore
 import com.mabsSD.toolbox.tools.CompressTool
-import com.mabsSD.toolbox.tools.CopyFileTool
 import com.mabsSD.toolbox.tools.MergeTool
 import com.mabsSD.toolbox.tools.OcrTool
 import com.mabsSD.toolbox.tools.ResultStore
@@ -29,7 +28,6 @@ class AppContainer(context: Context) {
     val historyDb: HistoryDatabase = HistoryDatabase.create(context)
     val preferences: PreferencesStore = PreferencesStore(context)
 
-    val copyFileTool: CopyFileTool = CopyFileTool(context, workingFileManager)
     val splitTool: SplitTool = SplitTool(context, workingFileManager, pdfEngine)
     val mergeTool: MergeTool = MergeTool(context, workingFileManager, pdfEngine)
     val compressTool: CompressTool = CompressTool(context, workingFileManager)
@@ -49,7 +47,6 @@ class ToolboxApplication : Application() {
 
         // Registering a tool is what makes its Home tile tappable, so this list
         // is the single source of truth for what the app can actually do.
-        ToolRegistry.register(container.copyFileTool)
         ToolRegistry.register(container.splitTool)
         ToolRegistry.register(container.mergeTool)
         ToolRegistry.register(container.compressTool)

@@ -39,7 +39,6 @@ private val sections: List<Pair<String, List<ToolItem>>> = listOf(
     "Organize" to allTools.filter { it.id in setOf("split", "merge") },
     "Optimize" to allTools.filter { it.id == "compress" },
     "Text" to allTools.filter { it.id == "ocr" },
-    "Utility" to allTools.filter { it.id == "copy_file" },
 )
 
 @Composable

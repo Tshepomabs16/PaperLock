@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MergeType
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Compress
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.TextFields
@@ -70,9 +69,7 @@ val quickTools = listOf(
 )
 
 /** The full catalogue, used by the Tools tab and shared availability logic. */
-val allTools = listOf(ToolItem("scan", "Scan", "Camera to PDF", Icons.Default.CameraAlt)) +
-    quickTools +
-    listOf(ToolItem("copy_file", "Copy File", "Duplicate a file", Icons.Default.ContentCopy))
+val allTools = listOf(ToolItem("scan", "Scan", "Camera to PDF", Icons.Default.CameraAlt)) + quickTools
 
 /**
  * A tool is tappable only if something is actually behind it. Deriving this from
@@ -241,7 +238,9 @@ private fun QuickToolsGrid(onToolSelected: (String) -> Unit, modifier: Modifier 
     // Plain rows rather than a lazy grid: four cards don't need laziness, and a
     // nested lazy grid needed a hard-coded height that broke on wider screens.
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val columns = if (maxWidth >= 560.dp) 4 else 2
+        // Four across needs ~180dp a card for "Compress" and its subtitle; below
+        // that (tablet portrait beside the rail) labels wrapped mid-word.
+        val columns = if (maxWidth >= 760.dp) 4 else 2
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             quickTools.chunked(columns).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -2,7 +2,6 @@ package com.mabsSD.toolbox.utils
 
 import android.graphics.Bitmap
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 enum class ScanFilter(val uiName: String) {
     ORIGINAL("Original"),
@@ -22,9 +21,11 @@ enum class ScanFilter(val uiName: String) {
  */
 object ImageProcessor {
 
-    /** Local-mean window at the reference resolution below, in pixels. */
-    private const val BASE_WINDOW = 8
-    private const val REFERENCE_LONG_SIDE = 2400f
+    /**
+     * Half-width of the local-mean window as a fraction of the long side:
+     * 1/16, i.e. a window 1/8 of the page across, as in Bradley & Roth.
+     */
+    private const val WINDOW_DIVISOR = 16
 
     /**
      * Apply [filter] to [bitmap], modifying it. [bitmap] must be mutable.
@@ -61,10 +62,14 @@ object ImageProcessor {
     /**
      * The local-mean window scales with resolution, so a thumbnail, the
      * on-screen preview and the exported page all threshold to the same look.
-     * A fixed 8px window would be far too coarse on a 320px thumbnail.
+     *
+     * It must also be much wider than the thickest stroke. It used to be 8px
+     * at 2400px (a 17px window): inside a bold heading the whole window was
+     * ink, the "mean" was ink, and the letters came out as hollow outlines.
+     * At 1/8 of the page the mean is always mostly paper, and the integral
+     * image makes the size free.
      */
-    private fun windowFor(w: Int, h: Int): Int =
-        max(2, (BASE_WINDOW * max(w, h) / REFERENCE_LONG_SIDE).roundToInt())
+    internal fun windowFor(w: Int, h: Int): Int = max(2, max(w, h) / WINDOW_DIVISOR)
 
     /** ARGB -> perceptual luminance 0..255, stored back into the same array. */
     private fun toGrayValues(pixels: IntArray) {
@@ -82,13 +87,12 @@ object ImageProcessor {
      * a pixel is ink if it is darker than (1 - k) of its neighbourhood mean.
      *
      * The mean comes from a summed-area table, so each pixel costs four
-     * lookups regardless of window size. The previous version summed the
-     * 17×17 window directly — ~1.2 billion operations for one 2400px page,
-     * run on the UI thread for every thumbnail.
+     * lookups regardless of window size — which is what lets the window be
+     * wide enough for bold text (see [windowFor]).
      *
      * [gray] holds luminance on entry and ARGB black/white on exit.
      */
-    private fun adaptiveThreshold(gray: IntArray, w: Int, h: Int, window: Int, k: Double = 0.2) {
+    internal fun adaptiveThreshold(gray: IntArray, w: Int, h: Int, window: Int, k: Double = 0.2) {
         // 255 * pixel count must fit in an Int; scan pages are decoded at
         // <= 2400px a side, well inside this.
         require(w.toLong() * h * 255 < Int.MAX_VALUE) { "Image too large for the integral image" }
