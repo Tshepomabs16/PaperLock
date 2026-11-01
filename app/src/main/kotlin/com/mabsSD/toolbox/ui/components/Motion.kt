@@ -5,6 +5,7 @@ import android.view.View
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -32,8 +33,13 @@ object Motion {
     /** Interactive feedback: quick, with a small overshoot on release. */
     val press = spring<Float>(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
 
-    /** Page slides: critically damped (no bounce), like UINavigationController. */
-    val page = spring<IntOffset>(dampingRatio = 1f, stiffness = 380f)
+    /**
+     * Page slides: a fixed 320 ms ease-out. A critically damped spring was
+     * tried first, but its long, slow tail kept a strip of the previous screen
+     * visible at the edge for a noticeable moment, wide on landscape tablets.
+     * A tween always finishes on time.
+     */
+    val page = tween<IntOffset>(durationMillis = 320, easing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f))
 
     /** Things appearing or moving into place, e.g. the dock indicator. */
     val settle = spring<Float>(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium)

@@ -2,6 +2,7 @@ package com.mabsSD.toolbox.ui
 
 import android.net.Uri
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -43,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -51,6 +53,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -206,7 +211,9 @@ fun ToolboxApp(
                 androidx.compose.animation.AnimatedVisibility(
                     visible = onTopLevelScreen,
                     enter = slideInHorizontally(spring(dampingRatio = 0.8f, stiffness = 400f)) { -it * 2 } + fadeIn(),
-                    exit = slideOutHorizontally(spring(stiffness = 600f)) { -it * 2 } + fadeOut(),
+                    // Quick and mostly a fade: a slow slide left a sliver of the
+                    // rail at the screen edge while the tool screen was already in.
+                    exit = slideOutHorizontally(tween(160)) { -it } + fadeOut(tween(90)),
                 ) {
                     FloatingDock(dockDestinations, currentRoute, goTo, scan, vertical = true)
                 }
@@ -226,16 +233,17 @@ fun ToolboxApp(
             NavHost(
             navController = navController,
             startDestination = if (seen) Screen.Home.route else Screen.Onboarding.route,
-            modifier = Modifier
-                .widthIn(max = MaxContentWidth)
-                .fillMaxSize(),
+            // Clipped: the screen being covered drifts a third of the way left
+            // and, unclipped, kept drawing into the rail's slot beside the
+            // NavHost until its slide settled.
+            modifier = Modifier.fillMaxSize().clipToBounds(),
             // Tabs cross-fade; anything opened from them is pushed on and popped off.
             enterTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabEnter() else pushEnter() },
             exitTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabExit() else pushExit() },
             popEnterTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabEnter() else popEnter() },
             popExitTransition = { if (isTopLevel(initialState.destination.route) && isTopLevel(targetState.destination.route)) tabExit() else popExit() },
         ) {
-            composable(Screen.Onboarding.route) {
+            panel(Screen.Onboarding.route) {
                 OnboardingScreen(
                     onDone = {
                         scope.launch { container.preferences.setOnboardingSeen() }
@@ -246,34 +254,34 @@ fun ToolboxApp(
                 )
             }
 
-            composable(Screen.Home.route) {
+            panel(Screen.Home.route) {
                 HomeScreen(
                     onToolSelected = { toolId -> navController.navigate(Screen.Tool.createRoute(toolId)) },
                     onSeeAllFiles = { navController.navigate(Screen.Files.route) },
                 )
             }
 
-            composable(Screen.Files.route) {
+            panel(Screen.Files.route) {
                 FilesScreen(
                     onOpenResult = { toResult() },
                 )
             }
 
-            composable(Screen.Tools.route) {
+            panel(Screen.Tools.route) {
                 ToolsScreen(onToolSelected = { toolId -> navController.navigate(Screen.Tool.createRoute(toolId)) })
             }
 
-            composable(Screen.Settings.route) {
+            panel(Screen.Settings.route) {
                 SettingsScreen()
             }
 
-            composable(Screen.Incoming.route) {
+            panel(Screen.Incoming.route) {
                 val batch = incoming
                 if (batch == null) {
                     // Only after Android killed and restored the app: the shared
                     // copies are gone with the old process, so there's nothing to offer.
                     LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
+                    return@panel
                 }
                 IncomingScreen(
                     batch = batch,
@@ -289,11 +297,11 @@ fun ToolboxApp(
                 )
             }
 
-            composable(
+            panel(
                 route = Screen.Tool.route,
                 arguments = listOf(navArgument("toolId") { type = NavType.StringType })
             ) { entry ->
-                val toolId = entry.arguments?.getString("toolId") ?: return@composable
+                val toolId = entry.arguments?.getString("toolId") ?: return@panel
                 val back = { navController.popBackStack(); Unit }
                 // Files shared from another app, if that's how we got here.
                 val shared = remember(entry) { incomingVm.filesFor(entry.id) }
@@ -310,11 +318,11 @@ fun ToolboxApp(
                 }
             }
 
-            composable(
+            panel(
                 route = Screen.Result.route,
                 arguments = listOf(navArgument("outputUri") { type = NavType.StringType })
             ) { entry ->
-                val outputUri = entry.arguments?.getString("outputUri") ?: return@composable
+                val outputUri = entry.arguments?.getString("outputUri") ?: return@panel
                 ResultScreen(
                     outputUriArg = outputUri,
                     onBack = { navController.popBackStack() }
@@ -341,5 +349,29 @@ fun ToolboxApp(
                 }
             }
         }
+    }
+}
+
+/**
+ * A destination as a full-width, opaque panel with its content capped at a
+ * readable width inside.
+ *
+ * The cap used to sit on the NavHost itself, leaving empty margins either side
+ * on landscape tablets. Slide transitions aren't clipped to that column, so the
+ * outgoing screen showed in the margins until the animation settled. Panels
+ * fill the width and carry their own background, so a screen slides away whole.
+ */
+private fun NavGraphBuilder.panel(
+    route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
+    content: @Composable (NavBackStackEntry) -> Unit,
+) = composable(route, arguments) { entry ->
+    Box(
+        contentAlignment = Alignment.TopCenter,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize()) { content(entry) }
     }
 }
