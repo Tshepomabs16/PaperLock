@@ -64,7 +64,7 @@ A debug build already installed must be uninstalled first (different signature).
 - [ ] Content rating questionnaire, target audience, ads: none
 - [ ] Store listing: text and graphics in [`fastlane/metadata/android/en-US`](../fastlane/metadata/android/en-US)
 - [x] Phone screenshots in the PaperLock design (`images/phoneScreenshots`, 1080x2160, taken on a Galaxy A15)
-- [ ] Optional: 7" and 10" tablet screenshots, since the app supports tablets
+- [x] 10" tablet screenshots (`images/tenInchScreenshots`, 1920x1080, taken on a Galaxy Tab A9+)
 - [ ] Closed test: personal accounts created after Nov 2023 need **12 testers opted
       in for 14 consecutive days** before production access
 - [ ] Bump `versionCode` in `app/build.gradle.kts` for every upload after the first
