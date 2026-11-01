@@ -63,8 +63,8 @@ A debug build already installed must be uninstalled first (different signature).
 - [ ] Data safety: no data collected, no data shared
 - [ ] Content rating questionnaire, target audience, ads: none
 - [ ] Store listing: text and graphics in [`fastlane/metadata/android/en-US`](../fastlane/metadata/android/en-US)
-- [ ] Retake the phone screenshots (`images/phoneScreenshots`, and `docs/screenshots` for the README):
-      the current ones still show the old blue Toolbox design
+- [x] Phone screenshots in the PaperLock design (`images/phoneScreenshots`, 1080x2160, taken on a Galaxy A15)
+- [ ] Optional: 7" and 10" tablet screenshots, since the app supports tablets
 - [ ] Closed test: personal accounts created after Nov 2023 need **12 testers opted
       in for 14 consecutive days** before production access
 - [ ] Bump `versionCode` in `app/build.gradle.kts` for every upload after the first

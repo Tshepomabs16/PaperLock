@@ -1,0 +1,187 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "empty",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Split",
+          "nav": "back"
+        },
+        {
+          "type": "card",
+          "id": "what",
+          "label": "What this does",
+          "body": "Pull selected pages out of a PDF into a new file. The original is left untouched."
+        },
+        {
+          "type": "button",
+          "id": "choose",
+          "text": "Choose a PDF",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "pick",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Split",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "Document",
+          "style": "label"
+        },
+        {
+          "type": "text",
+          "id": "doc",
+          "text": "Contract-2026.pdf",
+          "style": "title"
+        },
+        {
+          "type": "text",
+          "text": "12 pages",
+          "style": "caption"
+        },
+        {
+          "type": "text",
+          "text": "Pages to extract",
+          "style": "label"
+        },
+        {
+          "type": "input",
+          "id": "range",
+          "value": "1-3, 5",
+          "focused": true,
+          "helper": "Pages 1-3, 5 (4 pages)"
+        },
+        {
+          "type": "button",
+          "id": "extract",
+          "text": "Extract pages",
+          "full": true,
+          "size": "lg"
+        },
+        {
+          "type": "button",
+          "id": "other",
+          "text": "Choose another PDF",
+          "style": "secondary",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Result",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "Done — 186 KB",
+          "style": "label"
+        },
+        {
+          "type": "card",
+          "id": "file",
+          "title": "Contract-2026_p1-3_5.pdf"
+        },
+        {
+          "type": "image",
+          "id": "preview",
+          "kind": "page",
+          "height": 170
+        },
+        {
+          "type": "button",
+          "id": "save",
+          "text": "Save to…",
+          "full": true
+        },
+        {
+          "type": "row",
+          "id": "more",
+          "children": [
+            {
+              "type": "button",
+              "id": "share",
+              "text": "Share",
+              "style": "secondary",
+              "full": true
+            },
+            {
+              "type": "button",
+              "id": "open",
+              "text": "Open",
+              "style": "secondary",
+              "full": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "empty.choose",
+      "text": "Tap \"Choose a PDF\""
+    },
+    {
+      "target": "pick.range",
+      "text": "Type the pages, like 1-3, 5"
+    },
+    {
+      "target": "pick.extract",
+      "text": "Tap \"Extract pages\""
+    },
+    {
+      "target": "result.save",
+      "text": "Tap \"Save to…\" or \"Share\""
+    }
+  ],
+  "notes": [
+    {
+      "target": "empty.what",
+      "text": "Your original PDF is never changed"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "result.save",
+    "side": "right"
+  }
+}

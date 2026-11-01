@@ -1,0 +1,115 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "settings",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "text",
+          "text": "Settings",
+          "style": "h1"
+        },
+        {
+          "type": "text",
+          "text": "Appearance",
+          "style": "label"
+        },
+        {
+          "type": "tabs",
+          "id": "theme",
+          "style": "segmented",
+          "items": [
+            "System",
+            "Light",
+            "Dark"
+          ],
+          "active": "System"
+        },
+        {
+          "type": "text",
+          "text": "Privacy",
+          "style": "label"
+        },
+        {
+          "type": "card",
+          "id": "privacy",
+          "max_lines": 6,
+          "body": "Toolbox has no INTERNET permission — it has no way to send your files anywhere. Splitting, merging, compressing, and text recognition all run on this device; the text-recognition model is bundled inside the app."
+        },
+        {
+          "type": "text",
+          "text": "About",
+          "style": "label"
+        },
+        {
+          "type": "card",
+          "id": "about",
+          "title": "Toolbox",
+          "body": "Version 1.0.0 · Set in Plus Jakarta Sans (SIL Open Font License)."
+        },
+        {
+          "type": "bottomnav",
+          "id": "nav",
+          "active": 3,
+          "items": [
+            {
+              "icon": "home",
+              "label": "Home"
+            },
+            {
+              "icon": "folder",
+              "label": "Files"
+            },
+            {
+              "icon": "build",
+              "label": "Tools"
+            },
+            {
+              "icon": "settings",
+              "label": "Settings"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "settings.nav.settings",
+      "text": "Open \"Settings\""
+    },
+    {
+      "target": "settings.theme",
+      "text": "Choose \"System\", \"Light\" or \"Dark\""
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "settings.privacy",
+    "explain": {
+      "title": "Private by design",
+      "shape": "cloud",
+      "text": "Toolbox has no internet permission, so your files can't leave your phone."
+    }
+  }
+}

@@ -5,6 +5,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Lifted 4 units: centred on the shackle-to-base span the padlock read as sitting low. -->
+    <group android:translateY="-4">
     <!-- Shackle; its legs run down behind the page. -->
     <path
         android:strokeColor="#F59E0B"
@@ -24,4 +26,5 @@
     <path
         android:fillColor="#F59E0B"
         android:pathData="M42.2,74H52.3A1.7,1.7 0 0,1 52.3,77.4H42.2A1.7,1.7 0 0,1 42.2,74Z" />
+    </group>
 </vector>

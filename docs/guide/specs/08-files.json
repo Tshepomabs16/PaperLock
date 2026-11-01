@@ -1,0 +1,238 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "files",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "text",
+          "text": "Files",
+          "style": "h1"
+        },
+        {
+          "type": "search",
+          "id": "find",
+          "placeholder": "Search files"
+        },
+        {
+          "type": "chips",
+          "id": "sort",
+          "items": [
+            "Date",
+            "Name",
+            "Size"
+          ],
+          "active": "Date"
+        },
+        {
+          "type": "list",
+          "id": "list",
+          "style": "cards",
+          "trailing": "more",
+          "items": [
+            {
+              "title": "Payslip-Oct_compressed.pdf",
+              "sub": "Compress · 1.7 MB · 26 Oct 2026",
+              "icon": "pdf"
+            },
+            {
+              "title": "receipt_text.txt",
+              "sub": "OCR · 1 KB · 25 Oct 2026",
+              "icon": "text"
+            },
+            {
+              "title": "Contract-2026_p1-3_5.pdf",
+              "sub": "Split · 186 KB · 24 Oct 2026",
+              "icon": "pdf"
+            }
+          ]
+        },
+        {
+          "type": "bottomnav",
+          "id": "nav",
+          "active": 1,
+          "items": [
+            {
+              "icon": "home",
+              "label": "Home"
+            },
+            {
+              "icon": "folder",
+              "label": "Files"
+            },
+            {
+              "icon": "build",
+              "label": "Tools"
+            },
+            {
+              "icon": "settings",
+              "label": "Settings"
+            }
+          ]
+        }
+      ],
+      "overlays": [
+        {
+          "type": "fab",
+          "id": "fab",
+          "icon": "camera",
+          "color": "accent"
+        },
+        {
+          "type": "menu",
+          "id": "menu",
+          "anchor": "list.0.trailing",
+          "items": [
+            {
+              "label": "Share",
+              "icon": "share"
+            },
+            {
+              "label": "Delete",
+              "icon": "trash",
+              "danger": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "confirm",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "text",
+          "text": "Files",
+          "style": "h1"
+        },
+        {
+          "type": "search",
+          "id": "find",
+          "placeholder": "Search files"
+        },
+        {
+          "type": "chips",
+          "id": "sort",
+          "items": [
+            "Date",
+            "Name",
+            "Size"
+          ],
+          "active": "Date"
+        },
+        {
+          "type": "list",
+          "id": "list",
+          "style": "cards",
+          "trailing": "more",
+          "items": [
+            {
+              "title": "Payslip-Oct_compressed.pdf",
+              "sub": "Compress · 1.7 MB · 26 Oct 2026",
+              "icon": "pdf"
+            },
+            {
+              "title": "receipt_text.txt",
+              "sub": "OCR · 1 KB · 25 Oct 2026",
+              "icon": "text"
+            },
+            {
+              "title": "Contract-2026_p1-3_5.pdf",
+              "sub": "Split · 186 KB · 24 Oct 2026",
+              "icon": "pdf"
+            }
+          ]
+        },
+        {
+          "type": "bottomnav",
+          "id": "nav",
+          "active": 1,
+          "items": [
+            {
+              "icon": "home",
+              "label": "Home"
+            },
+            {
+              "icon": "folder",
+              "label": "Files"
+            },
+            {
+              "icon": "build",
+              "label": "Tools"
+            },
+            {
+              "icon": "settings",
+              "label": "Settings"
+            }
+          ]
+        }
+      ],
+      "overlays": [
+        {
+          "type": "dialog",
+          "id": "dlg",
+          "title": "Delete this file?",
+          "body": "\"Payslip-Oct_compressed.pdf\" will be removed from this device. This can't be undone.",
+          "buttons": [
+            {
+              "text": "Cancel",
+              "style": "text"
+            },
+            {
+              "text": "Delete",
+              "style": "danger_text"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "files.find",
+      "text": "Search by name"
+    },
+    {
+      "target": "files.sort.date",
+      "text": "Sort the list"
+    },
+    {
+      "target": "files.list.0.trailing",
+      "text": "Tap ⋮ to share or delete"
+    },
+    {
+      "target": "confirm.dlg.delete",
+      "text": "Tap \"Delete\" to confirm"
+    }
+  ],
+  "notes": [
+    {
+      "target": "files.list.2",
+      "text": "Tap a file to reopen it"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "confirm.dlg.delete"
+  }
+}

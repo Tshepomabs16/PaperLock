@@ -1,0 +1,101 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "incoming",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Open with Toolbox",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "1 file",
+          "style": "label"
+        },
+        {
+          "type": "list",
+          "id": "file",
+          "style": "cards",
+          "items": [
+            {
+              "title": "Lease-agreement.pdf",
+              "icon": "pdf"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "What do you want to do?",
+          "style": "label"
+        },
+        {
+          "type": "list",
+          "id": "choices",
+          "style": "cards",
+          "items": [
+            {
+              "title": "Split",
+              "sub": "Pull selected pages out into a new PDF",
+              "icon": "split"
+            },
+            {
+              "title": "Compress",
+              "sub": "Shrink it under a size limit",
+              "icon": "compress"
+            },
+            {
+              "title": "Merge",
+              "sub": "Join it with other PDFs",
+              "icon": "merge"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "incoming.file",
+      "text": "Share a PDF to Toolbox from any app"
+    },
+    {
+      "target": "incoming.choices",
+      "text": "Pick what to do with it"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "push",
+    "target": "incoming.file.0",
+    "prop": {
+      "kind": "file",
+      "text": "PDF"
+    },
+    "explain": {
+      "text": "Images get Scan, OCR and Compress instead.",
+      "shape": "speech"
+    }
+  }
+}

@@ -1,0 +1,258 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "home",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "text",
+          "text": "Toolbox",
+          "style": "h1"
+        },
+        {
+          "type": "pill",
+          "text": "Offline • Private"
+        },
+        {
+          "type": "button",
+          "id": "scan",
+          "text": "Scan document",
+          "icon": "camera",
+          "full": true,
+          "pill": true,
+          "size": "lg"
+        },
+        {
+          "type": "text",
+          "text": "Quick tools",
+          "style": "title"
+        },
+        {
+          "type": "grid",
+          "id": "tools",
+          "cols": 2,
+          "style": "compact",
+          "items": [
+            {
+              "title": "Split",
+              "sub": "Extract pages",
+              "icon": "split"
+            },
+            {
+              "title": "Merge",
+              "sub": "Combine PDFs",
+              "icon": "merge"
+            },
+            {
+              "title": "Compress",
+              "sub": "Hit a size limit",
+              "icon": "compress"
+            },
+            {
+              "title": "OCR",
+              "sub": "Copy text out",
+              "icon": "text"
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "id": "recent",
+          "title": "Recent",
+          "action": "See all"
+        },
+        {
+          "type": "list",
+          "id": "recent_files",
+          "style": "cards",
+          "trailing": "more",
+          "items": [
+            {
+              "title": "Invoice-March_merged_2.pdf",
+              "sub": "Merge · 412 KB · 26 Oct 2026",
+              "icon": "pdf"
+            },
+            {
+              "title": "Payslip-Oct_compressed.pdf",
+              "sub": "Compress · 1.7 MB · 25 Oct 2026",
+              "icon": "pdf"
+            }
+          ]
+        },
+        {
+          "type": "bottomnav",
+          "id": "nav",
+          "active": 0,
+          "items": [
+            {
+              "icon": "home",
+              "label": "Home"
+            },
+            {
+              "icon": "folder",
+              "label": "Files"
+            },
+            {
+              "icon": "build",
+              "label": "Tools"
+            },
+            {
+              "icon": "settings",
+              "label": "Settings"
+            }
+          ]
+        }
+      ],
+      "overlays": [
+        {
+          "type": "fab",
+          "id": "fab",
+          "icon": "camera",
+          "color": "accent"
+        }
+      ]
+    },
+    {
+      "id": "tool",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "OCR",
+          "nav": "back"
+        },
+        {
+          "type": "card",
+          "id": "what",
+          "label": "What this does",
+          "body": "Recognise text in a photo and copy or share it"
+        },
+        {
+          "type": "text",
+          "text": "Step 1",
+          "style": "label"
+        },
+        {
+          "type": "text",
+          "text": "Select a file, then run the tool."
+        },
+        {
+          "type": "button",
+          "id": "pick",
+          "text": "Pick an image",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Result",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "Done — 1 KB",
+          "style": "label"
+        },
+        {
+          "type": "card",
+          "id": "file",
+          "title": "receipt_text.txt"
+        },
+        {
+          "type": "card",
+          "id": "textblock",
+          "body": "TOOLBOX OCR TEST\nThe quick brown fox jumps over 12 lazy dogs."
+        },
+        {
+          "type": "button",
+          "id": "copy",
+          "text": "Copy text",
+          "style": "secondary",
+          "full": true
+        },
+        {
+          "type": "button",
+          "id": "save",
+          "text": "Save to…",
+          "full": true
+        },
+        {
+          "type": "row",
+          "id": "more",
+          "children": [
+            {
+              "type": "button",
+              "id": "share",
+              "text": "Share",
+              "style": "secondary",
+              "full": true
+            },
+            {
+              "type": "button",
+              "id": "open",
+              "text": "Open",
+              "style": "secondary",
+              "full": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "home.tools.ocr",
+      "text": "Tap \"OCR\""
+    },
+    {
+      "target": "tool.pick",
+      "text": "Tap \"Pick an image\""
+    },
+    {
+      "target": "result.copy",
+      "text": "Tap \"Copy text\""
+    },
+    {
+      "target": "result.save",
+      "text": "Or save it as a .txt file"
+    }
+  ],
+  "notes": [
+    {
+      "target": "result.textblock",
+      "text": "Recognition runs on your phone"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "result.copy"
+  }
+}

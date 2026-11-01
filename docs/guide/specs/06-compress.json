@@ -1,0 +1,208 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "empty",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Compress",
+          "nav": "back"
+        },
+        {
+          "type": "card",
+          "id": "what",
+          "label": "What this does",
+          "body": "Shrink a PDF or image toward a target size. Quality is never pushed past the point where text stops being readable."
+        },
+        {
+          "type": "text",
+          "text": "Choose a file",
+          "style": "label"
+        },
+        {
+          "type": "button",
+          "id": "pdf",
+          "text": "Choose a PDF",
+          "full": true,
+          "size": "lg"
+        },
+        {
+          "type": "button",
+          "id": "image",
+          "text": "Choose an image",
+          "style": "secondary",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "pick",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Compress",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "File",
+          "style": "label"
+        },
+        {
+          "type": "text",
+          "id": "doc",
+          "text": "Payslip-Oct.pdf",
+          "style": "title"
+        },
+        {
+          "type": "text",
+          "text": "4.8 MB",
+          "style": "caption"
+        },
+        {
+          "type": "text",
+          "text": "Target size",
+          "style": "label"
+        },
+        {
+          "type": "chips",
+          "id": "size",
+          "items": [
+            "1 MB",
+            "2 MB",
+            "5 MB"
+          ],
+          "active": "2 MB"
+        },
+        {
+          "type": "input",
+          "id": "custom",
+          "label": "Custom size, in MB"
+        },
+        {
+          "type": "button",
+          "id": "go",
+          "text": "Compress",
+          "full": true,
+          "size": "lg"
+        },
+        {
+          "type": "button",
+          "id": "other",
+          "text": "Choose another file",
+          "style": "secondary",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "appbar",
+          "id": "bar",
+          "title": "Result",
+          "nav": "back"
+        },
+        {
+          "type": "text",
+          "text": "Done — 1.7 MB",
+          "style": "label"
+        },
+        {
+          "type": "card",
+          "id": "file",
+          "title": "Payslip-Oct_compressed.pdf",
+          "body": "64% smaller — 4.8 MB → 1.7 MB"
+        },
+        {
+          "type": "image",
+          "id": "preview",
+          "kind": "page",
+          "height": 170
+        },
+        {
+          "type": "button",
+          "id": "save",
+          "text": "Save to…",
+          "full": true
+        },
+        {
+          "type": "row",
+          "id": "more",
+          "children": [
+            {
+              "type": "button",
+              "id": "share",
+              "text": "Share",
+              "style": "secondary",
+              "full": true
+            },
+            {
+              "type": "button",
+              "id": "open",
+              "text": "Open",
+              "style": "secondary",
+              "full": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "empty.pdf",
+      "text": "Tap \"Choose a PDF\" (or an image)"
+    },
+    {
+      "target": "pick.size.2-mb",
+      "text": "Pick a size, like \"2 MB\""
+    },
+    {
+      "target": "pick.go",
+      "text": "Tap \"Compress\""
+    },
+    {
+      "target": "result.save",
+      "text": "Save or share the smaller file"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "result.save",
+    "side": "right",
+    "explain": {
+      "title": "Why a target size?",
+      "shape": "cloud",
+      "text": "Upload forms often reject files over 2 MB. Toolbox shrinks the file until it fits, and never makes it bigger."
+    }
+  }
+}

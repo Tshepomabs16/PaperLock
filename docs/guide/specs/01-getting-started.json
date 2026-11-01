@@ -1,0 +1,180 @@
+{
+  "style": "sketch",
+  "ui_font": "../../../app/src/main/res/font/plus_jakarta_sans_regular.ttf",
+  "theme": {
+    "primary": "#3B5BDB",
+    "on_primary": "#FFFFFF",
+    "background": "#F7F5F2",
+    "surface": "#FFFFFF",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "border": "#E5E7EB",
+    "accent": "#F59E0B",
+    "danger": "#DC2626",
+    "success": "#16A34A",
+    "info": "#0D9488",
+    "radius": 18,
+    "button_radius": 14,
+    "selected": "#CCFBF1",
+    "on_selected": "#1E3A8A"
+  },
+  "frames": [
+    {
+      "id": "p1",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "button",
+          "id": "skip",
+          "text": "Skip",
+          "style": "text",
+          "size": "sm",
+          "align": "right"
+        },
+        {
+          "type": "spacer",
+          "height": 80
+        },
+        {
+          "type": "empty",
+          "id": "hero",
+          "icon": "camera",
+          "title": "Scan anything",
+          "text": "Turn paper into clean, readable PDFs with your camera."
+        },
+        {
+          "type": "spacer",
+          "height": 120
+        },
+        {
+          "type": "dots",
+          "count": 3,
+          "active": 0
+        },
+        {
+          "type": "spacer",
+          "height": 10
+        },
+        {
+          "type": "button",
+          "id": "next",
+          "text": "Next",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "button",
+          "id": "skip",
+          "text": "Skip",
+          "style": "text",
+          "size": "sm",
+          "align": "right"
+        },
+        {
+          "type": "spacer",
+          "height": 80
+        },
+        {
+          "type": "empty",
+          "id": "hero",
+          "icon": "send",
+          "title": "Edit offline",
+          "text": "Merge, split, compress, and pull text out of documents without an internet connection."
+        },
+        {
+          "type": "spacer",
+          "height": 120
+        },
+        {
+          "type": "dots",
+          "count": 3,
+          "active": 1
+        },
+        {
+          "type": "spacer",
+          "height": 10
+        },
+        {
+          "type": "button",
+          "id": "next",
+          "text": "Next",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "device": "phone",
+      "screen": [
+        {
+          "type": "button",
+          "id": "skip",
+          "text": "Skip",
+          "style": "text",
+          "size": "sm",
+          "align": "right"
+        },
+        {
+          "type": "spacer",
+          "height": 80
+        },
+        {
+          "type": "empty",
+          "id": "hero",
+          "icon": "lock",
+          "title": "Privacy first",
+          "text": "Toolbox has no INTERNET permission. Your files never leave your device — it isn't possible."
+        },
+        {
+          "type": "spacer",
+          "height": 120
+        },
+        {
+          "type": "dots",
+          "count": 3,
+          "active": 2
+        },
+        {
+          "type": "spacer",
+          "height": 10
+        },
+        {
+          "type": "button",
+          "id": "next",
+          "text": "Get started",
+          "full": true,
+          "size": "lg"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "target": "p1.next",
+      "text": "Tap \"Next\" (or swipe)"
+    },
+    {
+      "target": "p3.next",
+      "text": "Tap \"Get started\""
+    }
+  ],
+  "notes": [
+    {
+      "target": "p1.skip",
+      "text": "\"Skip\" goes straight to Home"
+    }
+  ],
+  "mascot": {
+    "character": "xiaohei",
+    "pose": "point",
+    "target": "p3.next",
+    "side": "right"
+  }
+}
