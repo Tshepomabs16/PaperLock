@@ -31,7 +31,13 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|uiMode|keyboard|keyboardHidden|navigation"
             android:windowSoftInputMode="adjustResize">
+            <!-- Rotation, fold/unfold, split-screen resizing and dark-mode
+                 switches no longer recreate the activity. Compose re-lays out
+                 from the new configuration (dock vs rail included), and tool
+                 screens keep the file being worked on; recreating used to
+                 drop Split, Merge, Compress and Scan back to "Choose a PDF". -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
