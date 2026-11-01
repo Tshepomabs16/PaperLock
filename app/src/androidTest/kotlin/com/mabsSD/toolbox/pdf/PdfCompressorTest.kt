@@ -181,6 +181,10 @@ class PdfCompressorTest {
         val rnd = java.util.Random(4471)
         val px = IntArray(photo.width * photo.height) { Color.rgb(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256)) }
         photo.setPixels(px, 0, photo.width, 0, 0, photo.width, photo.height)
+        // Opaque, like a real photo: an ARGB bitmap flagged as having alpha
+        // makes JPEGFactory attach a soft mask, and the compressor (rightly)
+        // leaves pictures with transparency alone.
+        photo.setHasAlpha(false)
         val out = ByteArrayOutputStream()
         PDDocument().use { doc ->
             val page = com.tom_roush.pdfbox.pdmodel.PDPage(com.tom_roush.pdfbox.pdmodel.common.PDRectangle.A4)
