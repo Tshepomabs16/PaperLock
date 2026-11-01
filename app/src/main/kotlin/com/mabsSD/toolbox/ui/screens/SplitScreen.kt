@@ -1,5 +1,7 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.ToolLimits
+import com.mabsSD.toolbox.ui.components.GoodToKnow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -145,6 +147,7 @@ fun SplitScreen(
                     "Pull selected pages out of a PDF into a new file. The original is left untouched.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                GoodToKnow(ToolLimits.split)
             }
 
             Spacer(Modifier.height(24.dp))

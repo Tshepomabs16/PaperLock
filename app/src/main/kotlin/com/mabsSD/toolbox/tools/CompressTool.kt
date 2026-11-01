@@ -73,11 +73,10 @@ class CompressTool(
                     "losing quality, so it was kept as it is (${formatFileSize(sourceSize)}).",
             )
         }
-        if (sourceSize > 0 && result.note == null) {
+        if (sourceSize > 0) {
             val saved = ((sourceSize - result.outputSize) * 100 / sourceSize).toInt()
-            return result.copy(
-                note = "$saved% smaller — ${formatFileSize(sourceSize)} → ${formatFileSize(result.outputSize)}"
-            )
+            val summary = "$saved% smaller — ${formatFileSize(sourceSize)} → ${formatFileSize(result.outputSize)}."
+            return result.copy(note = listOfNotNull(summary, result.note).joinToString(" "))
         }
         return result
     }
@@ -110,7 +109,7 @@ class CompressTool(
         val source = context.contentResolver.openInputStream(input.uri) ?: throw PdfError.Damaged()
         val outputUri = workingFileManager.createTempFile(prefix = "compressed_", extension = "pdf")
 
-        context.contentResolver.openOutputStream(outputUri)?.use { out ->
+        val outcome = context.contentResolver.openOutputStream(outputUri)?.use { out ->
             PdfCompressor.compress(source, out, targetBytes) { progress, message ->
                 onProgress(ToolProgress.Running(progress, message))
             }
@@ -120,11 +119,19 @@ class CompressTool(
         }
 
         val finalSize = workingFileManager.getFileSize(outputUri)
+        // Say plainly when the text was given up: someone compressing a digital
+        // statement for an upload portal needs to know it's no longer searchable.
+        val method = if (outcome.pagesRasterised) {
+            "To get this small, pages were turned into images, so text in this copy can't be " +
+                "selected, searched or copied, and links and form fields no longer work."
+        } else {
+            "Only the pictures were shrunk; text and links are unchanged."
+        }
         return ToolResult(
             outputUri = outputUri,
             outputName = outputName(input, "pdf"),
             outputSize = finalSize,
-            note = missedTargetNote(finalSize <= requestedTarget, requestedTarget),
+            note = listOfNotNull(missedTargetNote(finalSize <= requestedTarget, requestedTarget), method).joinToString(" "),
         )
     }
 

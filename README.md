@@ -39,7 +39,7 @@ at all, and CI fails the build if one ever appears.
 | 📷 | **Scan** | Capture pages with the system document scanner (edge detection and crop), or import photos. Choose Original, Grayscale or a crisp adaptive **B&W** filter, rotate and remove pages, then export a multi-page PDF. |
 | ✂️ | **Split** | Extract pages by range (e.g. `1-3, 7, 10-12`) into a new PDF. |
 | 🔗 | **Merge** | Combine several PDFs into one, in the order you choose. |
-| 🗜️ | **Compress** | Shrink a PDF or image to a target size — 1, 2 or 5 MB, or a custom limit — for upload portals with a size cap. Never returns a file bigger than the original. |
+| 🗜️ | **Compress** | Shrink a PDF or image to a target size — 1, 2 or 5 MB, or a custom limit — for upload portals with a size cap. Shrinks the pictures inside a PDF first so its text stays selectable, and only turns pages into images if that isn't enough (and says so). Never returns a file bigger than the original. |
 | 🔤 | **OCR** | Recognise text in an image and copy it out. The recognition model is bundled in the app, so it works offline. |
 | 🗂️ | **Files** | Every result is kept in an on-device history you can search, sort, open, share, save anywhere or delete. |
 
@@ -47,6 +47,14 @@ Start from anywhere: share a PDF or image to PaperLock from another app (or pick
 "Open with") and it offers the tools that fit. Built for phones and tablets: a floating
 dock on phones, a side rail on wide screens, spring animations throughout. Light, dark and system themes; results keep sensible file names
 (`Scan 2026-10-08 16.24.pdf`, `report_p1-3.pdf`) when you share or save them.
+
+## Limits
+
+PaperLock is upfront about what it can't do: each tool shows its limits on its own screen, and
+Settings lists them all. In short: scans are up to 30 pages; OCR reads Latin-script text from
+images (not PDFs); password-protected PDFs aren't supported; and if shrinking a PDF's pictures
+isn't enough to reach a target, its pages become images and text stops being selectable. The
+full list is in [`ToolLimits.kt`](app/src/main/kotlin/com/mabsSD/toolbox/ui/ToolLimits.kt).
 
 ## Privacy by construction
 

@@ -1,5 +1,7 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.ToolLimits
+import com.mabsSD.toolbox.ui.components.GoodToKnow
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -123,6 +125,7 @@ fun MergeScreen(
                     "Join several PDFs into one, in the order you set below.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                GoodToKnow(ToolLimits.merge)
             }
 
             Spacer(Modifier.height(24.dp))

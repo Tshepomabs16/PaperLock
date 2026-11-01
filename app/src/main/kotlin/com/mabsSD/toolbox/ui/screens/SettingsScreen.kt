@@ -1,5 +1,8 @@
 package com.mabsSD.toolbox.ui.screens
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import com.mabsSD.toolbox.ui.ToolLimits
 import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -93,6 +96,25 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(8.dp))
                 BorderedBlock {
                     Text(PRIVACY_SUMMARY, style = MaterialTheme.typography.bodyMedium)
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+
+            item {
+                SectionLabel("What PaperLock can't do")
+                Spacer(Modifier.height(8.dp))
+                BorderedBlock {
+                    ToolLimits.all.forEachIndexed { index, (tool, limits) ->
+                        if (index > 0) Spacer(Modifier.height(14.dp))
+                        Text(tool, style = MaterialTheme.typography.titleSmall)
+                        limits.forEach { line ->
+                            Row(modifier = Modifier.padding(top = 4.dp)) {
+                                Text("•", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(8.dp))
+                                Text(line, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(24.dp))
             }

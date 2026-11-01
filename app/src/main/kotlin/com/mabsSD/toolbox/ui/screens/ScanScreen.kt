@@ -1,5 +1,8 @@
 package com.mabsSD.toolbox.ui.screens
 
+import androidx.compose.foundation.layout.widthIn
+import com.mabsSD.toolbox.ui.ToolLimits
+import com.mabsSD.toolbox.ui.components.GoodToKnow
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
@@ -199,6 +202,8 @@ fun ScanScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
+                Spacer(Modifier.height(32.dp))
+                GoodToKnow(ToolLimits.scan, modifier = Modifier.widthIn(max = 480.dp))
             }
         }
         return

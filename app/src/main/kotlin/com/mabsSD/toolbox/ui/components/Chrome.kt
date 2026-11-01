@@ -165,3 +165,22 @@ fun BorderedBlock(
         }
     }
 }
+
+/**
+ * A tool's limits, shown inside its "What this does" block so people see them
+ * at the moment they matter. The text lives in [com.mabsSD.toolbox.ui.ToolLimits].
+ */
+@Composable
+fun GoodToKnow(limits: List<String>, modifier: Modifier = Modifier) {
+    if (limits.isEmpty()) return
+    Column(modifier = modifier.padding(top = 12.dp)) {
+        SectionLabel("Good to know")
+        limits.forEach { line ->
+            Row(modifier = Modifier.padding(top = 6.dp)) {
+                Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
+                Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}

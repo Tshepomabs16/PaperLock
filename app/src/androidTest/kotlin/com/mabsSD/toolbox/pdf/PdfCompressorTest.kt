@@ -172,4 +172,64 @@ class PdfCompressorTest {
             // expected
         }
     }
+
+    // Text-preserving stage ------------------------------------------------
+
+    /** A page with real (vector) text and a large, noisy photo: most of the weight is the photo. */
+    private fun textAndPhotoPdf(): ByteArray {
+        val photo = Bitmap.createBitmap(2400, 1800, Bitmap.Config.ARGB_8888)
+        val rnd = java.util.Random(4471)
+        val px = IntArray(photo.width * photo.height) { Color.rgb(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256)) }
+        photo.setPixels(px, 0, photo.width, 0, 0, photo.width, photo.height)
+        val out = ByteArrayOutputStream()
+        PDDocument().use { doc ->
+            val page = com.tom_roush.pdfbox.pdmodel.PDPage(com.tom_roush.pdfbox.pdmodel.common.PDRectangle.A4)
+            doc.addPage(page)
+            val image = com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory.createFromImage(doc, photo, 0.95f)
+            com.tom_roush.pdfbox.pdmodel.PDPageContentStream(doc, page).use { cs ->
+                cs.beginText()
+                cs.setFont(com.tom_roush.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD, 24f)
+                cs.newLineAtOffset(72f, 760f)
+                cs.showText("INVOICE 4471")
+                cs.endText()
+                cs.drawImage(image, 72f, 300f, 450f, 338f)
+            }
+            doc.save(out)
+        }
+        photo.recycle()
+        return out.toByteArray()
+    }
+
+    private fun textOf(pdf: ByteArray): String =
+        PDDocument.load(ByteArrayInputStream(pdf)).use { com.tom_roush.pdfbox.text.PDFTextStripper().getText(it) }
+
+    @Test
+    fun compress_shrinksPicturesFirst_andKeepsTheText() {
+        val source = textAndPhotoPdf()
+        val target = source.size / 3L
+        val out = ByteArrayOutputStream()
+        val outcome = PdfCompressor.compress(ByteArrayInputStream(source), out, targetBytes = target)
+
+        assertTrue("target should be reachable by shrinking the photo", outcome.hitTarget)
+        assertTrue("pages must not have been turned into images", !outcome.pagesRasterised)
+        assertTrue("output ${out.size()} should be within target $target", out.size() <= target)
+        assertTrue("text should still be extractable", textOf(out.toByteArray()).contains("INVOICE 4471"))
+    }
+
+    @Test
+    fun compress_textOnlyPdfBelowItsSize_reportsRasterising() {
+        // No pictures to shrink, so only rasterising can change the size; the
+        // outcome must say so rather than imply the text survived.
+        val source = PDDocument().use { doc ->
+            val page = com.tom_roush.pdfbox.pdmodel.PDPage(com.tom_roush.pdfbox.pdmodel.common.PDRectangle.A4)
+            doc.addPage(page)
+            com.tom_roush.pdfbox.pdmodel.PDPageContentStream(doc, page).use { cs ->
+                cs.beginText(); cs.setFont(com.tom_roush.pdfbox.pdmodel.font.PDType1Font.HELVETICA, 12f)
+                cs.newLineAtOffset(72f, 760f); cs.showText("Plain text page"); cs.endText()
+            }
+            ByteArrayOutputStream().also { doc.save(it) }.toByteArray()
+        }
+        val outcome = PdfCompressor.compress(ByteArrayInputStream(source), ByteArrayOutputStream(), targetBytes = 200)
+        assertTrue(outcome.pagesRasterised)
+    }
 }

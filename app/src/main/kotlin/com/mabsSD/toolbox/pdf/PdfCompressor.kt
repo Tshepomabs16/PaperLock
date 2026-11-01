@@ -1,7 +1,11 @@
 package com.mabsSD.toolbox.pdf
 
 import android.graphics.Bitmap
+import com.tom_roush.pdfbox.cos.COSName
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDResources
+import com.tom_roush.pdfbox.pdmodel.graphics.form.PDFormXObject
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
@@ -16,19 +20,29 @@ import java.io.OutputStream
 data class CompressOutcome(
     val hitTarget: Boolean,
     val finalSizeBytes: Long,
+    /**
+     * True if pages were turned into images: text can no longer be selected,
+     * searched or copied, and links and form fields are gone. False when only
+     * the pictures inside the PDF were shrunk.
+     */
+    val pagesRasterised: Boolean,
 )
 
 /**
- * Compresses a PDF to a target size by rasterising every page and re-encoding
- * it as JPEG at a reduced DPI and/or quality.
+ * Compresses a PDF to a target size in two stages.
  *
- * This treats every page as an image regardless of its original content,
- * which is deliberate rather than a shortcut: PdfBox-Android cannot decode
- * every filter a "real" PDF compressor would need to touch (CCITT, JBIG2,
- * JPX), but the framework and PdfBox can both *render* a page to a bitmap
- * unconditionally. Rasterising is the one approach that works on any input,
- * which matters more here than preserving vector text in a document that is,
- * for this app's use case, almost always a photograph to begin with.
+ * 1. **Keep the text.** Shrink only the pictures embedded in the PDF —
+ *    downscale and re-encode them as JPEG, over a few increasingly strong
+ *    steps — and leave text, vector graphics, links and form fields alone.
+ *    Most of a large PDF's weight is usually its pictures, so this is often
+ *    enough, and a digital statement or contract stays searchable.
+ * 2. **Rasterise.** If that can't reach the target, render every page to an
+ *    image and re-encode at a reduced DPI and/or quality. This works on any
+ *    input — PdfBox-Android can't decode every image filter (CCITT, JBIG2,
+ *    JPX) but can always render a page — at the cost of the text.
+ *
+ * If neither reaches the target, the smaller result is kept, preferring the
+ * one that kept its text.
  *
  * Memory: pages are rendered and encoded one at a time, and only the encoded
  * JPEG bytes (tens of KB) are kept between trials — not the decoded bitmaps
@@ -47,25 +61,130 @@ object PdfCompressor {
 
     private const val MAX_BISECT_ITERATIONS = 7
 
+    /** Stage 1 steps: (longest side in px, JPEG quality), gentlest first. */
+    private val IMAGE_STEPS = listOf(2000 to 80, 1600 to 70, 1300 to 60, 1000 to 50)
+
+    /** Pictures smaller than this aren't worth re-encoding. */
+    private const val MIN_IMAGE_PIXELS = 160_000
+
     fun compress(
         source: InputStream,
         destination: OutputStream,
         targetBytes: Long,
         onProgress: (Float, String) -> Unit = { _, _ -> },
     ): CompressOutcome {
-        source.use { stream ->
-            loadPdfOrThrow(stream).use { doc ->
-                return compressDocument(doc, destination, targetBytes, onProgress)
+        // Each stage-1 step starts again from the original pictures, so keep
+        // the source bytes rather than one document mutated step by step.
+        val original = source.use { it.readBytes() }
+        // Classifies encrypted/damaged/empty input before any work is done.
+        val hasPictures = loadPdfOrThrow(original.inputStream()).use { countPictures(it) > 0 }
+
+        // Stage 1: shrink pictures only.
+        var keptText: ByteArray? = null
+        val steps = if (hasPictures) IMAGE_STEPS else emptyList()
+        for ((i, step) in steps.withIndex()) {
+            onProgress(i.toFloat() / steps.size * 0.35f, "Shrinking pictures (text stays selectable)...")
+            val attempt = loadPdfOrThrow(original.inputStream()).use { doc ->
+                shrinkPictures(doc, maxSide = step.first, quality = step.second)
+                ByteArrayOutputStream().also { doc.save(it) }.toByteArray()
+            }
+            if (keptText == null || attempt.size < keptText.size) keptText = attempt
+            if (attempt.size <= targetBytes) {
+                destination.write(attempt)
+                return CompressOutcome(hitTarget = true, finalSizeBytes = attempt.size.toLong(), pagesRasterised = false)
+            }
+        }
+
+        // Stage 2: rasterise every page.
+        val rasterised = loadPdfOrThrow(original.inputStream()).use { doc ->
+            rasterise(doc, targetBytes) { p, msg -> onProgress(0.35f + p * 0.6f, msg) }
+        }
+        val rasterBytes = rasterised.second
+        return if (rasterised.first || keptText == null || rasterBytes.size < keptText.size) {
+            destination.write(rasterBytes)
+            CompressOutcome(rasterised.first, rasterBytes.size.toLong(), pagesRasterised = true)
+        } else {
+            // Neither fits; the text-preserving version is also the smaller one.
+            destination.write(keptText)
+            CompressOutcome(hitTarget = false, finalSizeBytes = keptText.size.toLong(), pagesRasterised = false)
+        }
+    }
+
+    /** Embedded raster images reachable from the pages, counted once each. */
+    private fun countPictures(doc: PDDocument): Int {
+        val seen = java.util.IdentityHashMap<Any, Unit>()
+        doc.pages.forEach { page -> page.resources?.let { visitImages(it, 0) { img, _, _ -> seen[img.cosObject] = Unit } } }
+        return seen.size
+    }
+
+    /**
+     * Downscale every sizeable picture to at most [maxSide] px and re-encode it
+     * as JPEG at [quality]. Pictures with transparency, 1-bit images, ones
+     * PdfBox can't decode, and ones that wouldn't get smaller are left as they
+     * are. A picture used on several pages is re-encoded once and shared.
+     */
+    private fun shrinkPictures(doc: PDDocument, maxSide: Int, quality: Int) {
+        val replaced = java.util.IdentityHashMap<Any, PDImageXObject?>()
+        doc.pages.forEach { page ->
+            val resources = page.resources ?: return@forEach
+            visitImages(resources, 0) { image, owner, name ->
+                val replacement = replaced.getOrPut(image.cosObject) { reencode(doc, image, maxSide, quality) }
+                if (replacement != null) owner.put(name, replacement)
             }
         }
     }
 
-    private fun compressDocument(
+    private fun reencode(doc: PDDocument, image: PDImageXObject, maxSide: Int, quality: Int): PDImageXObject? {
+        if (image.isStencil || image.bitsPerComponent == 1) return null
+        if (image.width.toLong() * image.height < MIN_IMAGE_PIXELS) return null
+        val dict = image.cosObject
+        if (dict.containsKey(COSName.SMASK) || dict.containsKey(COSName.MASK)) return null
+        val originalLength = dict.length
+        var bitmap: Bitmap? = null
+        return try {
+            bitmap = image.image ?: return null
+            val longest = maxOf(bitmap.width, bitmap.height)
+            if (longest > maxSide) {
+                val scale = maxSide.toFloat() / longest
+                val scaled = Bitmap.createScaledBitmap(
+                    bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1), (bitmap.height * scale).toInt().coerceAtLeast(1), true,
+                )
+                if (scaled !== bitmap) bitmap.recycle()
+                bitmap = scaled
+            }
+            val jpeg = JPEGFactory.createFromImage(doc, bitmap, quality / 100f)
+            if (jpeg.cosObject.length < originalLength) jpeg else null
+        } catch (e: Exception) {
+            null // a filter PdfBox-Android can't decode (JPX, JBIG2...): leave it
+        } catch (e: OutOfMemoryError) {
+            null // an enormous picture: leave it rather than fail the whole job
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    /** Calls [onImage] for each image XObject under [resources], following form XObjects. */
+    private fun visitImages(
+        resources: PDResources,
+        depth: Int,
+        onImage: (image: PDImageXObject, owner: PDResources, name: COSName) -> Unit,
+    ) {
+        if (depth > 6) return // malformed, self-referencing forms
+        for (name in resources.xObjectNames.toList()) {
+            val xObject = try { resources.getXObject(name) } catch (e: Exception) { null } ?: continue
+            when (xObject) {
+                is PDImageXObject -> onImage(xObject, resources, name)
+                is PDFormXObject -> xObject.resources?.let { visitImages(it, depth + 1, onImage) }
+            }
+        }
+    }
+
+    /** Stage 2. Returns whether the target was met, and the PDF bytes. */
+    private fun rasterise(
         doc: PDDocument,
-        destination: OutputStream,
         targetBytes: Long,
         onProgress: (Float, String) -> Unit,
-    ): CompressOutcome {
+    ): Pair<Boolean, ByteArray> {
         val pageCount = doc.numberOfPages
         val renderer = PDFRenderer(doc)
         // Points, not pixels — PDRectangle is already DPI-independent, so the
@@ -126,14 +245,9 @@ object PdfCompressor {
             ?: error("DPI_STEPS must not be empty")
 
         onProgress(0.95f, "Writing file...")
-        // The written PDF is larger than the sum of its embedded JPEGs once
-        // page objects, dictionaries and the xref table are added, so the
-        // outcome's reported size comes from what was actually written, not
-        // from the pre-write page total the search was comparing against.
-        val counting = CountingOutputStream(destination)
-        writePdf(chosen.pages, pageBoxes, counting)
-
-        return CompressOutcome(hitTarget = winner != null, finalSizeBytes = counting.bytesWritten)
+        val out = ByteArrayOutputStream()
+        writePdf(chosen.pages, pageBoxes, out)
+        return Pair(winner != null, out.toByteArray())
     }
 
     private class PageSet(val pages: List<ByteArray>) {
@@ -184,24 +298,5 @@ object PdfCompressor {
             }
             out.save(destination)
         }
-    }
-
-    /** Counts bytes as they pass through, without buffering them. */
-    private class CountingOutputStream(private val delegate: OutputStream) : OutputStream() {
-        var bytesWritten: Long = 0
-            private set
-
-        override fun write(b: Int) {
-            delegate.write(b)
-            bytesWritten++
-        }
-
-        override fun write(b: ByteArray, off: Int, len: Int) {
-            delegate.write(b, off, len)
-            bytesWritten += len
-        }
-
-        override fun flush() = delegate.flush()
-        override fun close() = delegate.close()
     }
 }

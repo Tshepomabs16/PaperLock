@@ -1,5 +1,7 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.ToolLimits
+import com.mabsSD.toolbox.ui.components.GoodToKnow
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -135,6 +137,7 @@ fun CompressScreen(
                         "past the point where text stops being readable.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                GoodToKnow(ToolLimits.compress)
             }
 
             Spacer(Modifier.height(24.dp))

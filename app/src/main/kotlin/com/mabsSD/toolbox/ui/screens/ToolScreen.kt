@@ -1,5 +1,7 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.ui.ToolLimits
+import com.mabsSD.toolbox.ui.components.GoodToKnow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -141,6 +143,7 @@ fun ToolScreen(
                             text = tool.description,
                             style = MaterialTheme.typography.bodyLarge,
                         )
+                        GoodToKnow(ToolLimits.forTool(toolId))
                     }
 
                     Spacer(Modifier.height(28.dp))
