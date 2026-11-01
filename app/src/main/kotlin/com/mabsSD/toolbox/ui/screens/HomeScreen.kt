@@ -1,15 +1,23 @@
 package com.mabsSD.toolbox.ui.screens
 
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.Layout
+import androidx.compose.runtime.key
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import com.mabsSD.toolbox.history.HistoryViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.BoxWithConstraints
 import com.mabsSD.toolbox.ui.components.rememberPressScale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,8 +26,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MergeType
@@ -32,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -84,66 +89,64 @@ fun HomeScreen(
     onSeeAllFiles: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val container = remember { context.toolboxContainer() }
-    val recent by container.historyDb.historyDao().observeRecent(5)
-        .collectAsState(initial = emptyList())
+    val history: HistoryViewModel = viewModel()
+    // Null only on a cold start, before the first query returns.
+    val recentOrNull by history.recent.collectAsState()
+    val recent = recentOrNull
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { inner ->
-        LazyColumn(
-            contentPadding = PaddingValues(
+    // A plain scrolling Column, not Scaffold + LazyColumn: Home has about eight
+    // fixed items, and it's rebuilt from scratch on every return from a tool.
+    // Scaffold and the lazy list each add a subcomposition pass during measure;
+    // a trace on a Galaxy A15 put one 34-43 ms frame at the start of every
+    // back-to-Home slide, which is the hitch people felt.
+    val bars = WindowInsets.systemBars.asPaddingValues()
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(
                 start = 20.dp,
                 end = 20.dp,
-                top = inner.calculateTopPadding(),
-                bottom = inner.calculateBottomPadding() + LocalDockClearance.current + 16.dp,
+                top = bars.calculateTopPadding(),
+                bottom = bars.calculateBottomPadding() + LocalDockClearance.current + 16.dp,
             ),
-            modifier = Modifier.fillMaxSize(),
+    ) {
+        Header()
+        Spacer(Modifier.height(20.dp))
+        ScanButton(onClick = { onToolSelected("scan") })
+        Spacer(Modifier.height(28.dp))
+        Text(
+            "Quick tools",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(12.dp))
+        QuickToolsGrid(onToolSelected = onToolSelected)
+        Spacer(Modifier.height(28.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            item {
-                Header()
-                Spacer(Modifier.height(20.dp))
-                ScanButton(onClick = { onToolSelected("scan") })
-                Spacer(Modifier.height(28.dp))
-                Text(
-                    "Quick tools",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Spacer(Modifier.height(12.dp))
+            Text(
+                "Recent",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            if (!recent.isNullOrEmpty()) {
+                TextButton(onClick = onSeeAllFiles) { Text("See all") }
             }
+        }
+        Spacer(Modifier.height(8.dp))
 
-            item {
-                QuickToolsGrid(onToolSelected = onToolSelected)
-                Spacer(Modifier.height(28.dp))
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Recent",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    if (recent.isNotEmpty()) {
-                        TextButton(onClick = onSeeAllFiles) { Text("See all") }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-
-            if (recent.isEmpty()) {
-                item { RecentEmptyState(onScan = { onToolSelected("scan") }) }
-            } else {
-                items(recent, key = { it.id }) { entry ->
+        when {
+            recent == null -> Unit // still loading: show nothing rather than a false "no files yet"
+            recent.isEmpty() -> RecentEmptyState(onScan = { onToolSelected("scan") })
+            else -> recent.forEach { entry ->
+                key(entry.id) {
                     FileHistoryCard(
-                        modifier = Modifier.animateItem(),
                         entry = entry,
                         onClick = {
                             ResultStore.updateLastResult(
@@ -156,8 +159,8 @@ fun HomeScreen(
                             onSeeAllFiles()
                         },
                     )
-                    Spacer(Modifier.height(8.dp))
                 }
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -235,20 +238,26 @@ private fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 private fun QuickToolsGrid(onToolSelected: (String) -> Unit, modifier: Modifier = Modifier) {
-    // Plain rows rather than a lazy grid: four cards don't need laziness, and a
-    // nested lazy grid needed a hard-coded height that broke on wider screens.
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        // Four across needs ~180dp a card for "Compress" and its subtitle; below
-        // that (tablet portrait beside the rail) labels wrapped mid-word.
-        val columns = if (maxWidth >= 760.dp) 4 else 2
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            quickTools.chunked(columns).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { tool ->
-                        QuickToolCard(tool = tool, onClick = { onToolSelected(tool.id) }, modifier = Modifier.weight(1f))
-                    }
-                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-                }
+    // A single-pass custom layout. BoxWithConstraints worked but subcomposed
+    // its content during measure, adding to the cost of every return to Home.
+    // Four across needs ~180dp a card for "Compress" and its subtitle; below
+    // that (tablet portrait) labels wrapped mid-word, so two across.
+    Layout(
+        content = {
+            quickTools.forEach { tool -> QuickToolCard(tool = tool, onClick = { onToolSelected(tool.id) }) }
+        },
+        modifier = modifier.fillMaxWidth(),
+    ) { measurables, constraints ->
+        val gap = 12.dp.roundToPx()
+        val columns = if (constraints.maxWidth >= 760.dp.roundToPx()) 4 else 2
+        val cellWidth = (constraints.maxWidth - gap * (columns - 1)) / columns
+        val rows = measurables.map { it.measure(Constraints.fixedWidth(cellWidth)) }.chunked(columns)
+        val rowHeights = rows.map { row -> row.maxOf { it.height } }
+        layout(constraints.maxWidth, rowHeights.sum() + gap * (rows.size - 1)) {
+            var y = 0
+            rows.forEachIndexed { r, row ->
+                row.forEachIndexed { c, placeable -> placeable.place(c * (cellWidth + gap), y) }
+                y += rowHeights[r] + gap
             }
         }
     }

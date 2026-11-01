@@ -49,6 +49,14 @@ android {
                 "proguard-rules.pro"
             )
         }
+        // Release code (R8, shrinking) signed with the debug key: installs over a
+        // debug build without wiping it, for measuring real-world performance.
+        // Never uploaded.
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {

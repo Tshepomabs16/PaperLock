@@ -1,0 +1,10 @@
+# Baseline profile: code ART compiles ahead of time at install (Play applies it
+# at install; androidx.profileinstaller does for sideloaded APKs).
+#
+# Compose ships rules for its own libraries, but none of PaperLock's code was
+# covered, so every screen ran interpreted for its first several uses. A trace
+# on a Galaxy A15 put 23-34 ms of measure/layout on the first frame of each
+# navigation, felt as a hitch at the start of the slide. The app's code is
+# small, so compiling all of it costs little.
+HSPLcom/mabsSD/toolbox/**->**(**)**
+Lcom/mabsSD/toolbox/**;

@@ -57,6 +57,9 @@ private fun iconFor(fileName: String): ImageVector = when {
  * Share and Delete live behind an overflow menu rather than a swipe: a
  * destructive swipe is too easy to trigger while scrolling.
  */
+/** One formatter for every card; creating one per card added up on each rebuild of Home. */
+private val mediumDate: DateFormat by lazy { DateFormat.getDateInstance(DateFormat.MEDIUM) }
+
 @Composable
 fun FileHistoryCard(
     entry: HistoryEntry,
@@ -66,9 +69,7 @@ fun FileHistoryCard(
     onDelete: (() -> Unit)? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    val date = remember(entry.createdAtMillis) {
-        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(entry.createdAtMillis))
-    }
+    val date = remember(entry.createdAtMillis) { mediumDate.format(Date(entry.createdAtMillis)) }
 
     val source = remember { MutableInteractionSource() }
     Card(

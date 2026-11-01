@@ -1,7 +1,6 @@
 package com.mabsSD.toolbox.ui
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -116,8 +116,11 @@ private val dockDestinations = listOf(
     DockDestination(Screen.Settings.route, "Settings", Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
-/** Screens wider than this get the side rail and a width cap on content. */
+/** Landscape screens at least this wide get the side rail instead of the bottom dock. */
 private const val WIDE_SCREEN_DP = 600
+
+/** Fixed slot for the rail: its ~62dp pill plus margin either side. */
+private val RailSlotWidth = 84.dp
 
 /** Content never stretches past this on tablets; lines and cards stay readable. */
 private val MaxContentWidth = 840.dp
@@ -141,7 +144,11 @@ fun ToolboxApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val onTopLevelScreen = currentRoute in topLevelRoutes
-    val wide = LocalConfiguration.current.screenWidthDp >= WIDE_SCREEN_DP
+    // Side rail only when the screen is both wide and landscape-shaped (tablet
+    // or phone turned sideways). A tablet held upright gets the bottom dock,
+    // like a phone: the rail there wasted width and sat far from the thumb.
+    val config = LocalConfiguration.current
+    val rail = config.screenWidthDp >= WIDE_SCREEN_DP && config.screenWidthDp > config.screenHeightDp
 
     // Like the desktop dock's auto-hide: scrolling content down tucks the dock
     // away, scrolling back up brings it back. Every new screen starts with it shown.
@@ -183,20 +190,23 @@ fun ToolboxApp(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        // Wide screens: the dock stands upright as a rail beside the content.
-        if (wide) {
-            AnimatedVisibility(
-                visible = onTopLevelScreen,
-                enter = slideInHorizontally(spring(dampingRatio = 0.8f, stiffness = 400f)) { -it * 2 } + fadeIn(),
-                exit = slideOutHorizontally(spring(stiffness = 600f)) { -it * 2 } + fadeOut(),
-                modifier = Modifier.fillMaxHeight(),
+        // Landscape on wide screens: the dock stands upright as a rail. Its slot
+        // keeps a fixed width even while the rail is hidden on tool screens:
+        // letting the slot collapse changed the content's width mid-transition,
+        // so every screen reflowed sideways as it slid in or out.
+        if (rail) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+                    .width(RailSlotWidth),
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
-                        .padding(start = DockMargin, end = 4.dp),
+                // Fully qualified: the bare name resolves to the outer Row's RowScope variant.
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = onTopLevelScreen,
+                    enter = slideInHorizontally(spring(dampingRatio = 0.8f, stiffness = 400f)) { -it * 2 } + fadeIn(),
+                    exit = slideOutHorizontally(spring(stiffness = 600f)) { -it * 2 } + fadeOut(),
                 ) {
                     FloatingDock(dockDestinations, currentRoute, goTo, scan, vertical = true)
                 }
@@ -211,7 +221,7 @@ fun ToolboxApp(
                 .nestedScroll(hideOnScroll),
         ) {
           CompositionLocalProvider(
-              LocalDockClearance provides if (wide) 0.dp else DockHeight + DockMargin + 16.dp,
+              LocalDockClearance provides if (rail) 0.dp else DockHeight + DockMargin + 16.dp,
           ) {
             NavHost(
             navController = navController,
@@ -316,7 +326,7 @@ fun ToolboxApp(
             // Phones: the dock floats over the bottom of the content. It leaves
             // with a spring when a tool opens (as iOS hides its tab bar on push)
             // and while scrolling down.
-            if (!wide) {
+            if (!rail) {
                 // Fully qualified: inside the Row, the bare name resolves to RowScope's variant.
                 androidx.compose.animation.AnimatedVisibility(
                     visible = onTopLevelScreen && dockShown,

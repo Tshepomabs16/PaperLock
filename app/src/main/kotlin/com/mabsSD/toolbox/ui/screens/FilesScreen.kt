@@ -1,5 +1,7 @@
 package com.mabsSD.toolbox.ui.screens
 
+import com.mabsSD.toolbox.history.HistoryViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mabsSD.toolbox.ui.components.LocalDockClearance
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -54,8 +56,9 @@ fun FilesScreen(
 ) {
     val context = LocalContext.current
     val container = remember { context.toolboxContainer() }
-    val allEntries by container.historyDb.historyDao().observeAll()
-        .collectAsState(initial = emptyList())
+    val history: HistoryViewModel = viewModel()
+    val allOrNull by history.all.collectAsState()
+    val allEntries = allOrNull.orEmpty()
 
     var query by remember { mutableStateOf("") }
     var sortOrder by remember { mutableStateOf(SortOrder.DATE) }
@@ -115,7 +118,8 @@ fun FilesScreen(
             }
 
             if (visible.isEmpty()) {
-                item { FilesEmptyState(hasAny = allEntries.isNotEmpty()) }
+                // Nothing until the first query returns, rather than a false "no files yet".
+                if (allOrNull != null) item { FilesEmptyState(hasAny = allEntries.isNotEmpty()) }
             } else {
                 items(visible, key = { it.id }) { entry ->
                     FileHistoryCard(

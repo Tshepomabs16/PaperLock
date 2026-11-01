@@ -62,12 +62,16 @@ fun View.tick() {
 fun AnimatedContentTransitionScope<NavBackStackEntry>.pushEnter(): EnterTransition =
     slideInHorizontally(Motion.page) { it }
 
-/** The screen underneath drifts a third of the way back and dims slightly. */
+/**
+ * The screen underneath drifts a third of the way back. No fade: fading the
+ * whole outgoing screen renders it to an offscreen layer every frame, which
+ * cost visible frames on mid-range tablets for little visual gain.
+ */
 fun AnimatedContentTransitionScope<NavBackStackEntry>.pushExit(): ExitTransition =
-    slideOutHorizontally(Motion.page) { -it / 3 } + fadeOut(tween(300), targetAlpha = 0.6f)
+    slideOutHorizontally(Motion.page) { -it / 3 }
 
 fun AnimatedContentTransitionScope<NavBackStackEntry>.popEnter(): EnterTransition =
-    slideInHorizontally(Motion.page) { -it / 3 } + fadeIn(tween(300), initialAlpha = 0.6f)
+    slideInHorizontally(Motion.page) { -it / 3 }
 
 fun AnimatedContentTransitionScope<NavBackStackEntry>.popExit(): ExitTransition =
     slideOutHorizontally(Motion.page) { it }
