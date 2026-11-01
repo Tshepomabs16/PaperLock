@@ -188,14 +188,8 @@ private fun OfflineBadge(modifier: Modifier = Modifier) {
             .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Box(
-            Modifier
-                .size(7.dp)
-                .background(MaterialTheme.colorScheme.tertiary, CircleShape)
-        )
-        Spacer(Modifier.width(8.dp))
         Text(
-            "Offline • Private",
+            "Offline & Private",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
         )
